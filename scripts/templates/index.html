@@ -556,8 +556,11 @@ async function gerarResumo(id, regerar) {
     if (!r.ok) throw new Error(d.error || 'falha');
     showSummary(d.resumo, d.cache);
   } catch (e) {
-    $('sumSlot').innerHTML = `<div class="sum err"><div class="sum-head">Não foi possível resumir</div>
-      <div class="sum-body">${esc(e.message)}</div></div>`;
+    $('sumSlot').innerHTML = `<div class="sum err">
+      <div class="sum-head">Não foi possível resumir</div>
+      <div class="sum-body">${esc(e.message)}</div>
+      <div class="sum-foot"><button class="btn ghost sm" onclick="gerarResumo(${id}, true)">Tentar novamente</button></div>
+    </div>`;
   }
 }
 

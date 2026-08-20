@@ -1,6 +1,7 @@
 import os
 import re
 import sqlite3
+import time
 
 from dotenv import load_dotenv
 from flask import Flask, g, jsonify, render_template, request
@@ -13,6 +14,8 @@ load_dotenv()
 
 DB_PATH = config.preparar_dados()
 GEMINI_MODEL = config.GEMINI_MODEL
+# Usados quando o principal esta sobrecarregado (503).
+MODELOS_RESERVA = ('gemini-2.5-flash-lite', 'gemini-2.0-flash')
 
 app = Flask(__name__)
 
@@ -186,6 +189,37 @@ ATO:
 {texto}"""
 
 
+def _transitorio(e):
+    """503/429/500 do Gemini sao picos de demanda, nao erro do pedido."""
+    s = str(e)
+    return any(c in s for c in ('503', 'UNAVAILABLE', '429', 'RESOURCE_EXHAUSTED',
+                                'overloaded', 'high demand', '500', 'INTERNAL'))
+
+
+def _mensagem_amigavel(e):
+    if _transitorio(e):
+        return ('O serviço de IA está sobrecarregado no momento. '
+                'Tente novamente em alguns instantes.')
+    return f'Falha ao gerar resumo: {e}'
+
+
+def _gerar_com_retry(prompt):
+    """Tenta o modelo principal com backoff e, se persistir, o de reserva."""
+    ultimo = None
+    for modelo in (GEMINI_MODEL, *MODELOS_RESERVA):
+        for tentativa in range(3):
+            try:
+                resp = gemini().models.generate_content(
+                    model=modelo, contents=prompt)
+                return (resp.text or '').strip()
+            except Exception as e:
+                ultimo = e
+                if not _transitorio(e):
+                    raise
+                time.sleep(1.5 * (2 ** tentativa))  # 1.5s, 3s, 6s
+    raise ultimo
+
+
 @app.route('/api/resumo/<int:ato_id>', methods=['POST'])
 def resumo(ato_id):
     db = get_db()
@@ -201,14 +235,11 @@ def resumo(ato_id):
     if len(corpo) > 120000:
         corpo = corpo[:120000] + '\n[...texto truncado...]'
 
+    prompt = PROMPT.format(texto=f"{row['titulo']}\n\n{corpo}")
     try:
-        resp = gemini().models.generate_content(
-            model=GEMINI_MODEL,
-            contents=PROMPT.format(texto=f"{row['titulo']}\n\n{corpo}"),
-        )
-        texto_resumo = (resp.text or '').strip()
+        texto_resumo = _gerar_com_retry(prompt)
     except Exception as e:
-        return jsonify({'error': f'falha ao gerar resumo: {e}'}), 502
+        return jsonify({'error': _mensagem_amigavel(e)}), 502
 
     if not texto_resumo:
         return jsonify({'error': 'o modelo nao retornou resumo'}), 502
