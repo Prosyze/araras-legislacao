@@ -14,8 +14,9 @@ load_dotenv()
 
 DB_PATH = config.preparar_dados()
 GEMINI_MODEL = config.GEMINI_MODEL
-# Usados quando o principal esta sobrecarregado (503).
-MODELOS_RESERVA = ('gemini-2.5-flash-lite', 'gemini-2.0-flash')
+# Usados quando o principal esta sobrecarregado (503). Modelos com versao fixa
+# saem do ar com o tempo, entao a reserva final e um alias que acompanha a atual.
+MODELOS_RESERVA = ('gemini-3.5-flash', 'gemini-flash-latest')
 
 app = Flask(__name__)
 

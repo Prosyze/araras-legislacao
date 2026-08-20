@@ -22,7 +22,9 @@ else:
     DB_PATH = os.environ.get('DB_PATH') or SEED_DB
     PDF_DIR = os.environ.get('PDF_DIR') or os.path.join(BASE_DIR, 'diarios_oficiais')
 
-GEMINI_MODEL = os.environ.get('GEMINI_MODEL', 'gemini-2.5-flash')
+# Alias que acompanha o Flash atual, evitando quebrar quando uma versao
+# especifica e descontinuada.
+GEMINI_MODEL = os.environ.get('GEMINI_MODEL', 'gemini-flash-latest')
 
 
 def preparar_dados():
