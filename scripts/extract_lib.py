@@ -22,9 +22,22 @@ DATE_NUMERIC = re.compile(r'\b(\d{1,2})/(\d{1,2})/(\d{4})\b')
 NUMERO_IN_TITLE = re.compile(r'N[º°o]?\.?\s*[:\-]?\s*([\d\.]+(?:/\d{2,4})?)')
 
 
+# O numero tem de vir logo apos o tipo do ato. Sem isso, titulos como
+# "LEI FISCAL - RELATORIO DO 2o BIMESTRE" ou "LEI DE RESPONSABILIDADE FISCAL"
+# (relatorios contabeis, nao normas) entrariam como lei.
+# Tolera a pontuacao errada que aparece na fonte ("DECRETO Nº, 6.580",
+# "DECRETO - LEGISLATIVO Nº 13"), mas nao deixa passar palavra no lugar do
+# numero.
+TITULO_NUMERADO = re.compile(
+    r'^(LEI|DECRETO)[\s\-–]*((COMPLEMENTAR|LEGISLATIVO|MUNICIPAL)[\s\-–]*)?'
+    r'N?[º°o\.,:\s\-–]*\d', re.IGNORECASE)
+
+
 def classify(title):
     t = title.strip().upper()
     if t.startswith('PROJETO DE LEI'):
+        return None
+    if not TITULO_NUMERADO.match(t):
         return None
     if t.startswith('LEI COMPLEMENTAR'):
         return 'LEI COMPLEMENTAR'
@@ -56,28 +69,66 @@ def _mes_num(nome):
 
 
 def parse_data(title):
-    m = DATE_IN_TITLE.search(title)
-    if not m:
-        m = DATE_NUMERIC.search(title)
-        if not m:
-            return None
+    """Primeira data valida do texto.
+
+    Percorre todas as ocorrencias em vez de parar na primeira: o sumario pode
+    trazer um dia impossivel ("DE 32 DE MARCO") e o corpo repetir a data certa
+    logo em seguida.
+    """
+    for m in DATE_IN_TITLE.finditer(title):
+        dia, mes_nome, ano = m.groups()
+        mes = _mes_num(mes_nome)
+        if not mes:
+            continue
+        try:
+            return date(int(ano.replace('.', '')), mes, int(dia)).isoformat()
+        except ValueError:
+            continue
+
+    for m in DATE_NUMERIC.finditer(title):
         dia, mes_str, ano = m.groups()
         try:
             return date(int(ano), int(mes_str), int(dia)).isoformat()
         except ValueError:
-            return None
+            continue
 
-    dia, mes_nome, ano = m.groups()
-    ano = ano.replace('.', '')
-    mes = _mes_num(mes_nome)
-    if not mes:
-        return None
+    return None
+
+
+def _muito_antes(data, referencia, meses=6):
+    """True se `data` esta mais de `meses` antes de `referencia` (ISO)."""
+    if not data or not referencia:
+        return False
     try:
-        # date() rejects impossible days ("DE 32 DE MARÇO"), which do occur
-        # as typos in the source diaries.
-        return date(int(ano), mes, int(dia)).isoformat()
+        d = date.fromisoformat(data)
+        r = date.fromisoformat(referencia)
     except ValueError:
-        return None
+        return False
+    return (r.year - d.year) * 12 + (r.month - d.month) > meses
+
+
+def resolver_data(titulo, texto, data_diario=None):
+    """Data do ato, preferindo o titulo do sumario mas conferindo com o corpo.
+
+    O sumario as vezes erra o ano ("DE 7 DE JANEIRO DE 2014" numa edicao de
+    2015, quando o proprio decreto diz 2015). Nesse caso o corpo do ato manda,
+    desde que traga uma data compativel com a data de publicacao.
+    """
+    do_titulo = parse_data(titulo)
+    do_corpo = parse_data(texto[:300]) if texto else None
+
+    plausivel = (do_corpo and data_diario and do_corpo <= data_diario
+                 and not _muito_antes(do_corpo, data_diario))
+
+    if do_titulo is None:
+        # Sem data no sumario, so aceita a do corpo se ela for compativel.
+        return do_corpo if plausivel or (
+            do_corpo and (not data_diario or do_corpo <= data_diario)) else None
+
+    if _muito_antes(do_titulo, data_diario) and plausivel:
+        return do_corpo
+
+    return do_titulo
 
 
 def get_toc(doc, max_scan_pages=20):
@@ -177,6 +228,33 @@ def compute_boilerplate(doc, pages=None):
             freq[l] += 1
     threshold = max(3, int(n * 0.6))
     return {l for l, c in freq.items() if c >= threshold}
+
+
+# Outro tipo de ato, com numeracao propria, publicado sob um titulo de lei/
+# decreto no sumario. Anexos legitimos ("TERMO DE ADMISSAO", "CONVENIO QUE
+# CELEBRAM") nao trazem numero proprio e por isso nao casam aqui.
+OUTRO_ATO_NUMERADO = re.compile(
+    r'^(COMUNICADO|EXTRATO|EDITAL|PORTARIA|AVISO|CONVOCA[ÇC][ÃA]O'
+    r'|NOTIFICA[ÇC][ÃA]O|ERRATA|OF[ÍI]CIO|DELIBERA[ÇC][ÃA]O)\b'
+    r'[^\n]{0,40}?N[º°o]\.?\s*\d', re.IGNORECASE)
+
+MARCA_DE_ATO = re.compile(
+    r'(faz saber que a C[âa]mara|D\s*E\s*C\s*R\s*E\s*T\s*A|DECRETA\b'
+    r'|sancionada e promulgada|no uso de suas atribui|PROMULGA'
+    r'|\bArt(?:igo)?\.?\s*\d)', re.IGNORECASE)
+
+
+def corpo_de_outro_ato(titulo, texto):
+    """True quando o texto sob um titulo de lei/decreto e, na verdade, outro
+    ato (o diario as vezes usa o titulo da norma como cabecalho de secao)."""
+    if MARCA_DE_ATO.search(texto or ''):
+        return False
+    tnorm = _normalize(titulo)[:20]
+    for linha in (l.strip() for l in (texto or '').split('\n')):
+        if not linha or _normalize(linha)[:20] == tnorm:
+            continue  # repeticoes do proprio titulo
+        return bool(OUTRO_ATO_NUMERADO.match(linha))
+    return False
 
 
 def _normalize(s):
@@ -288,14 +366,10 @@ def extract_entries(doc, data_diario=None):
         texto = '\n'.join(lines).strip()
         texto = re.sub(r'\n{3,}', '\n\n', texto)
 
-        data_ato = parse_data(title)
-        if data_ato is None:
-            # Falling back to the body can pick up a date belonging to some
-            # other act cited there, so only trust one that could plausibly
-            # be this act: signed on or before the day it was published.
-            cand = parse_data(texto[:300])
-            if cand and (data_diario is None or cand <= data_diario):
-                data_ato = cand
+        if corpo_de_outro_ato(title, texto):
+            continue
+
+        data_ato = resolver_data(title, texto, data_diario)
 
         results.append({
             'titulo': title,

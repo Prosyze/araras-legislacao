@@ -2,7 +2,7 @@
 column (including generated resumos) untouched."""
 import sqlite3
 
-from extract_lib import parse_data
+from extract_lib import resolver_data
 
 DB_PATH = 'db/araras_legislacao.db'
 
@@ -15,11 +15,7 @@ def main():
 
     changed = 0
     for r in rows:
-        nova = parse_data(r['titulo'])
-        if nova is None:
-            cand = parse_data(r['texto'][:300])
-            if cand and cand <= r['data_diario']:
-                nova = cand
+        nova = resolver_data(r['titulo'], r['texto'], r['data_diario'])
         if nova != r['data_ato']:
             conn.execute('UPDATE atos SET data_ato = ? WHERE id = ?', (nova, r['id']))
             changed += 1

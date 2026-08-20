@@ -7,12 +7,16 @@ from dotenv import load_dotenv
 from flask import Flask, g, jsonify, render_template, request
 
 import config
+import manutencao
 import updater
 from format_lib import plain_text, structure_text
 
 load_dotenv()
 
 DB_PATH = config.preparar_dados()
+# O banco do volume persiste entre deploys, entao correcoes nas regras de
+# extracao precisam ser reaplicadas aos dados ja gravados.
+manutencao.sanitizar(DB_PATH)
 GEMINI_MODEL = config.GEMINI_MODEL
 # Usados quando o principal esta sobrecarregado (503). Modelos com versao fixa
 # saem do ar com o tempo, entao a reserva final e um alias que acompanha a atual.
