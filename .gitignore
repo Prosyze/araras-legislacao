@@ -1,0 +1,29 @@
+# Segredos — nunca versionar
+.env
+.env.local
+
+# PDFs originais do Diário Oficial (~6,9 GB; baixados sob demanda)
+diarios_oficiais/
+
+# Artefatos de banco (o banco principal db/araras_legislacao.db É versionado
+# como semente do deploy; backups e journals não)
+db/backup_*.db
+db/*.db-wal
+db/*.db-shm
+db/build_log.txt
+*.part
+
+# JSON original de origem (substituído pela API oficial)
+diario-oficial-*.json
+
+# Execução local
+server.log
+__pycache__/
+*.pyc
+scratch_*
+_*.txt
+_*.json
+
+# Lixo de execucao a partir de scripts/ (caminhos relativos errados)
+scripts/db/
+pdfs/
