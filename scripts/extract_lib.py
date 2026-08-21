@@ -202,6 +202,17 @@ def main_pages(doc):
     return idx or list(range(len(doc)))
 
 
+def annex_pages(doc):
+    """Paginas anexadas depois do corpo do diario.
+
+    A Camara Municipal publica suas leis por anexo: o corpo do diario traz so
+    o titulo e a remissao "EM ANEXO", e o texto inteiro vem no documento
+    apenso, que nao carrega o cabecalho do diario.
+    """
+    corpo = set(main_pages(doc))
+    return [i for i in range(len(doc)) if i not in corpo]
+
+
 def build_page_map(doc, pages=None):
     """Map printed page number -> pdf index, first occurrence wins.
 
@@ -282,14 +293,38 @@ def _line_for_offset(offsets, char_pos):
     return len(offsets) - 1 if offsets else 0
 
 
-def _find_last_heading(lines, title_norm):
+# Distancia, em linhas, ate ainda considerar duas ocorrencias do titulo como
+# a mesma abertura de ato: o diario repete o titulo como cabecalho de secao e
+# logo abaixo como titulo do proprio ato, sempre a poucas linhas.
+REPETICAO_MAX_LINHAS = 12
+
+
+def _find_start_heading(lines, title_norm):
+    """Linha em que o ato realmente comeca.
+
+    O titulo aparece duas vezes seguidas: como cabecalho de secao e como
+    titulo do ato, e o recorte tem de comecar na segunda. So que ele tambem
+    reaparece paginas adiante, citado por outro ato ou repetido no fim da
+    edicao; ir ate a ultima ocorrencia da faixa (o que se fazia antes) fazia
+    o recorte pular todo o corpo e gravar apenas a linha do titulo. Por isso
+    a busca so avanca enquanto as repeticoes forem vizinhas.
+    """
     if not title_norm:
         return None
     big, offsets = _build_norm_index(lines)
-    last_pos = big.rfind(title_norm)
-    if last_pos == -1:
+    pos = big.find(title_norm)
+    if pos == -1:
         return None
-    return _line_for_offset(offsets, last_pos)
+    linha = _line_for_offset(offsets, pos)
+    while True:
+        seguinte = big.find(title_norm, pos + 1)
+        if seguinte == -1:
+            break
+        linha_seguinte = _line_for_offset(offsets, seguinte)
+        if linha_seguinte - linha > REPETICAO_MAX_LINHAS:
+            break
+        pos, linha = seguinte, linha_seguinte
+    return linha
 
 
 def _find_first_heading_after(lines, title_norm, after_idx):
@@ -303,6 +338,110 @@ def _find_first_heading_after(lines, title_norm, after_idx):
     return after_idx + 1 + _line_for_offset(offsets, pos)
 
 
+# Fecho dos documentos que a Camara anexa; depois dele vem so a folha de
+# assinaturas digitais, que nao faz parte do ato.
+ANEXO_FECHO = re.compile(
+    r'^(DOCUMENTO ASSINADO DIGITALMENTE|Assinaturas Digitais)\b', re.IGNORECASE)
+
+# Quantos caracteres do cabecalho da pagina identificam o documento apenso.
+MARCA_ANEXO_CHARS = 16
+
+
+def _chaves_do_ato(tipo, numero):
+    """Formas normalizadas pelas quais o titulo do ato pode abrir uma linha.
+
+    Serve para reencontrar o ato dentro do anexo, onde a pontuacao do titulo
+    quase nunca bate com a do sumario ("LEI N. 5.761," x "LEI Nº 5761 -").
+    """
+    if not tipo or not numero:
+        return []
+    limpo = numero.strip().lstrip('0') or numero.strip()
+    chaves = {_normalize('%s N %s' % (tipo, n)) for n in (numero, limpo)}
+    return [c for c in chaves if len(c) >= 6]
+
+
+def _abre_outro_ato(linha, chaves):
+    """True quando a linha e o titulo de um ato diferente do que se recorta."""
+    if not TITULO_NUMERADO.match(linha) or linha != linha.upper():
+        return False
+    n = _normalize(linha)
+    return not any(n.startswith(c) for c in chaves)
+
+
+def texto_do_anexo(doc, tipo, numero, anexos=None, boilerplate=None):
+    """Corpo do ato quando o diario publicou so o titulo e remeteu ao anexo.
+
+    As leis promulgadas pela Camara entram no diario como "EM ANEXO": o corpo
+    traz apenas a linha do titulo e o texto vem no PDF apenso, que
+    `main_pages` exclui de proposito. Sem esta busca o ato fica gravado sem
+    uma linha de conteudo.
+    """
+    chaves = _chaves_do_ato(tipo, numero)
+    if not chaves:
+        return None
+    anexos = annex_pages(doc) if anexos is None else anexos
+    if not anexos:
+        return None
+    if boilerplate is None:
+        boilerplate = compute_boilerplate(doc, pages=anexos)
+
+    def limpar(pi):
+        saida = []
+        for linha in doc[pi].get_text().split(chr(10)):
+            t = linha.strip()
+            if t and t not in boilerplate and not BOILER_LINE.match(t):
+                saida.append(t)
+        return saida
+
+    def abre_ato(l):
+        return any(_normalize(l).startswith(c) for c in chaves)
+
+    def cabecalho(pi):
+        """Marca do documento apenso: os anexos vem concatenados num PDF so,
+        cada um com seu proprio cabecalho de pagina ("GABINETE DO PREFEITO",
+        "CAMARA MUNICIPAL DE ARARAS"). Quando a marca muda, comecou outro
+        documento e o ato acabou."""
+        for linha in doc[pi].get_text().split(chr(10)):
+            n = _normalize(linha)
+            if n:
+                return n[:MARCA_ANEXO_CHARS] if len(n) >= MARCA_ANEXO_CHARS \
+                    else None
+        return None
+
+    for pos, pi in enumerate(anexos):
+        linhas = limpar(pi)
+        inicio = next((i for i, l in enumerate(linhas) if abre_ato(l)), None)
+        if inicio is None:
+            continue
+
+        marca = cabecalho(pi)
+        colhido = []
+        for pj in [pi] + anexos[pos + 1:]:
+            atual = linhas[inicio:] if pj == pi else limpar(pj)
+            if pj != pi:
+                # A pagina seguinte que ja abre outro ato encerra este.
+                if any(_abre_outro_ato(l, chaves) for l in atual[:6]):
+                    break
+                if marca and cabecalho(pj) != marca:
+                    break
+            parou = False
+            for i, l in enumerate(atual):
+                if (i or pj != pi) and _abre_outro_ato(l, chaves):
+                    parou = True
+                    break
+                if ANEXO_FECHO.match(l):
+                    parou = True
+                    break
+                colhido.append(l)
+            if parou:
+                break
+
+        texto = chr(10).join(colhido).strip()
+        if MARCA_DE_ATO.search(texto):
+            return texto
+    return None
+
+
 def extract_entries(doc, data_diario=None):
     """Returns list of dicts: title, tipo, numero, data_ato, texto, pagina_inicio, pagina_fim"""
     toc = get_toc(doc)
@@ -311,6 +450,8 @@ def extract_entries(doc, data_diario=None):
     body = main_pages(doc)
     page_map = build_page_map(doc, pages=body)
     boilerplate = compute_boilerplate(doc, pages=body)
+    anexos = annex_pages(doc)
+    boiler_anexo = compute_boilerplate(doc, pages=anexos) if anexos else set()
     # The last entry must stop at the end of the diary body, not run into the
     # annexes appended after it.
     total_pages = len(body)
@@ -350,21 +491,40 @@ def extract_entries(doc, data_diario=None):
                     continue
                 if re.match(r'^P[aá]gina\s+\d+$', s):
                     continue
+                # Linha do sumario ("Titulo ....... 7"): quando o ato comeca na
+                # propria pagina do sumario, ela casaria com o titulo e o
+                # recorte abriria no indice em vez de abrir no ato.
+                if TOC_LINE.match(s):
+                    continue
                 lines.append(s)
 
         title_norm = _normalize(title)
-        start_i = _find_last_heading(lines, title_norm)
+        start_i = _find_start_heading(lines, title_norm)
         if start_i is not None:
             lines = lines[start_i:]
-            next_title = toc[idx + 1][0] if idx + 1 < len(toc) else None
-            if next_title and toc[idx + 1][1] <= printed_pages[-1]:
-                next_norm = _normalize(next_title)
-                cut_i = _find_first_heading_after(lines, next_norm, 0)
-                if cut_i is not None:
+            # O corte e o proximo titulo do sumario que aparecer na faixa. Se
+            # ele nao for encontrado (o sumario nem sempre reproduz o titulo
+            # ao pe da letra), tenta os seguintes, senao o recorte engoliria
+            # todas as paginas ate o proximo ato numerado.
+            for prox_titulo, prox_pagina in toc[idx + 1:]:
+                if prox_pagina > printed_pages[-1]:
+                    break
+                cut_i = _find_first_heading_after(
+                    lines, _normalize(prox_titulo), 0)
+                if cut_i:
                     lines = lines[:cut_i]
+                    break
 
         texto = '\n'.join(lines).strip()
         texto = re.sub(r'\n{3,}', '\n\n', texto)
+
+        numero = parse_numero(title)
+        # Diario que so publica o titulo e remete ao anexo: o texto vem de la.
+        if not MARCA_DE_ATO.search(texto):
+            do_anexo = texto_do_anexo(doc, tipo, numero, anexos=anexos,
+                                      boilerplate=boiler_anexo)
+            if do_anexo:
+                texto = do_anexo
 
         if corpo_de_outro_ato(title, texto):
             continue
@@ -374,7 +534,7 @@ def extract_entries(doc, data_diario=None):
         results.append({
             'titulo': title,
             'tipo': tipo,
-            'numero': parse_numero(title),
+            'numero': numero,
             'data_ato': data_ato,
             'texto': texto,
             'pagina_inicio': printed_pages[0],
