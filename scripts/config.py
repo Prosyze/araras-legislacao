@@ -1,16 +1,24 @@
 """Configuracao de caminhos, valida tanto local quanto no Railway.
 
 Em producao o disco do container e efemero: monta-se um volume (DATA_DIR) e o
-banco vive nele. Na primeira subida, o banco versionado no repositorio e
-copiado para o volume como semente.
+banco vive nele. Na primeira subida, a semente versionada no repositorio e
+copiada para o volume.
+
+Semente e banco de trabalho sao arquivos diferentes de proposito. A semente
+carrega so o acervo (`atos`, `edicoes_processadas` e o indice de busca); os
+chunks e vetores do RAG, que sao derivaveis e pesam mais que o acervo inteiro,
+ficam de fora e sao reconstruidos no destino. Ver `scripts/gerar_semente.py`.
 """
 import os
 import shutil
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-# Banco versionado no repositorio (semente somente-leitura).
-SEED_DB = os.path.join(BASE_DIR, 'db', 'araras_legislacao.db')
+# Semente versionada no repositorio (somente-leitura).
+SEED_DB = os.path.join(BASE_DIR, 'db', 'semente.db')
+
+# Banco de trabalho local, fora do controle de versao.
+LOCAL_DB = os.path.join(BASE_DIR, 'db', 'araras_legislacao.db')
 
 # Volume persistente, quando houver. Sem ele, tudo roda direto no repositorio.
 DATA_DIR = os.environ.get('DATA_DIR', '').strip()
@@ -19,7 +27,7 @@ if DATA_DIR:
     DB_PATH = os.path.join(DATA_DIR, 'araras_legislacao.db')
     PDF_DIR = os.environ.get('PDF_DIR') or os.path.join(DATA_DIR, 'diarios_oficiais')
 else:
-    DB_PATH = os.environ.get('DB_PATH') or SEED_DB
+    DB_PATH = os.environ.get('DB_PATH') or LOCAL_DB
     PDF_DIR = os.environ.get('PDF_DIR') or os.path.join(BASE_DIR, 'diarios_oficiais')
 
 # Alias que acompanha o Flash atual, evitando quebrar quando uma versao

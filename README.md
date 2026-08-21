@@ -34,8 +34,17 @@ Abra <http://127.0.0.1:5050>.
 
 ## Deploy (Railway)
 
-O banco (`db/araras_legislacao.db`) vai versionado como **semente**, então o
-app sobe já com todo o acervo.
+O que vai versionado é `db/semente.db` — só o acervo (`atos`,
+`edicoes_processadas` e o índice de busca), gerado por
+`python scripts/gerar_semente.py`. Rode e commite sempre que o acervo mudar.
+O banco de trabalho `db/araras_legislacao.db` fica fora do git: ele carrega
+também os chunks e vetores da busca inteligente, que o servidor refaz sozinho.
+
+Na primeira subida a semente é copiada para o volume. Nos deploys seguintes o
+volume já existe e não é sobrescrito — então `manutencao.sincronizar_com_semente`
+regrava, ato a ato, só os textos que a semente corrigiu, sem tocar nas edições
+que o `updater` capturou depois do último deploy. Reextrair em produção não é
+opção: os PDFs do Diário não vão para o container.
 
 Variáveis de ambiente:
 
@@ -64,12 +73,21 @@ scripts/
   format_lib.py    remonta o texto do PDF em blocos legíveis
   updater.py       busca e processa edições novas
   auditoria.py     mede a qualidade da extração
-  rebuild_db.py    reprocessa tudo preservando resumos
+  manutencao.py    alinha o banco de produção com as regras atuais
+  reextrair.py     reaplica o extrator ao acervo sem recriar o banco
+  rebuild_db.py    reprocessa tudo do zero preservando resumos
   build_db.py      carga inicial
+  gerar_semente.py gera db/semente.db para o deploy
+  tests/           testes do extrator e da busca inteligente
   templates/       interface web
 db/
-  araras_legislacao.db
+  semente.db            versionado — acervo + índice de busca
+  araras_legislacao.db  banco de trabalho (fora do git)
 ```
+
+> Corrigiu regra de extração? `python scripts/reextrair.py --dry-run` mostra o
+> que mudaria; sem a flag, aplica e preserva os ids (e com eles os resumos e o
+> índice da busca inteligente). Depois, `gerar_semente.py` para levar ao deploy.
 
 ## Fonte dos dados
 
