@@ -206,6 +206,12 @@ def rodar_atualizacao(anos=None):
                   if novas else 'Nada a fazer — a base já estava atualizada.')
         _set(phase='concluido', message=resumo,
              finished_at=datetime.now().isoformat(timespec='seconds'))
+
+        if ao_concluir:
+            try:
+                ao_concluir(total_atos)
+            except Exception as e:
+                _add_erro(f'pos-atualizacao: {e}')
     except Exception as e:
         _add_erro(str(e))
         _set(phase='erro', message=f'Falha na atualização: {e}',
@@ -213,6 +219,11 @@ def rodar_atualizacao(anos=None):
     finally:
         _set(running=False)
         conn.close()
+
+
+# Gancho opcional: app.py usa para disparar a indexacao da IA logo apos
+# entrarem atos novos, sem que o updater precise conhecer o RAG.
+ao_concluir = None
 
 
 def _sync_fts(conn):

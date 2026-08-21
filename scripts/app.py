@@ -8,14 +8,18 @@ from flask import Flask, g, jsonify, render_template, request
 
 import config
 import manutencao
+import routes_ia
 import updater
 from format_lib import plain_text, structure_text
+from rag import indexer as rag_indexer
 
 load_dotenv()
 
 DB_PATH = config.preparar_dados()
 # O banco do volume persiste entre deploys, entao correcoes nas regras de
-# extracao precisam ser reaplicadas aos dados ja gravados.
+# extracao precisam ser reaplicadas aos dados ja gravados. Primeiro o texto
+# reextraido que veio na semente, depois a limpeza pelas regras atuais.
+manutencao.sincronizar_com_semente(DB_PATH, config.SEED_DB)
 manutencao.sanitizar(DB_PATH)
 GEMINI_MODEL = config.GEMINI_MODEL
 # Usados quando o principal esta sobrecarregado (503). Modelos com versao fixa
@@ -23,6 +27,20 @@ GEMINI_MODEL = config.GEMINI_MODEL
 MODELOS_RESERVA = ('gemini-3.5-flash', 'gemini-flash-latest')
 
 app = Flask(__name__)
+
+# Consulta inteligente (RAG). Fica num blueprint proprio: a pesquisa
+# convencional acima nao depende dela e continua funcionando se a IA estiver
+# indisponivel.
+routes_ia.registrar(app, DB_PATH)
+
+
+def _indexar_apos_atualizacao(novos_atos):
+    """Lei nova cadastrada entra no indice sozinha, logo apos a atualizacao."""
+    if novos_atos > 0:
+        rag_indexer.iniciar_em_background(DB_PATH)
+
+
+updater.ao_concluir = _indexar_apos_atualizacao
 
 _genai_client = None
 

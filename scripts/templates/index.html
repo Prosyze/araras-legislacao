@@ -84,9 +84,7 @@
     border-radius: var(--radius);
     box-shadow: var(--shadow);
     padding: 16px;
-    margin-top: -52px;
-    position: relative;
-    z-index: 3;
+    margin-top: 12px;
   }
   .searchbar { display: flex; gap: 10px; }
   .field { position: relative; flex: 1; }
@@ -291,12 +289,176 @@
     margin: 14px 0 0; line-height: 1.55; text-align: left;
   }
 
+
+  /* ---------- Alternador de modo ---------- */
+  .modes {
+    display: flex; align-items: center; gap: 5px;
+    background: rgba(255,255,255,.12);
+    border: 1px solid rgba(255,255,255,.22);
+    border-radius: 11px; padding: 5px;
+    margin-top: -52px; position: relative; z-index: 3;
+  }
+  .mode {
+    font: inherit; font-size: .9rem; font-weight: 500;
+    color: rgba(255,255,255,.87); background: none; border: none;
+    padding: 9px 16px; border-radius: 8px; cursor: pointer;
+    display: flex; align-items: center; gap: 7px; white-space: nowrap;
+  }
+  .mode:hover { background: rgba(255,255,255,.13); color: #fff; }
+  .mode.on { background: var(--panel); color: var(--brand); box-shadow: var(--shadow); }
+  .modes-note {
+    margin-left: auto; padding-right: 9px; font-size: .75rem;
+    color: rgba(255,255,255,.72);
+  }
+
+  /* ---------- Consulta com IA ---------- */
+  .iacard {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: var(--radius); box-shadow: var(--shadow);
+    margin-top: 12px; overflow: hidden;
+  }
+  .ia-hero { padding: 30px 22px 4px; text-align: center; }
+  .ia-hero h2 {
+    font-family: 'Source Serif 4', Georgia, serif; font-weight: 600;
+    font-size: 1.32rem; margin: 0 0 7px; letter-spacing: -.01em;
+  }
+  .ia-hero p {
+    margin: 0 auto; max-width: 540px; color: var(--ink-soft);
+    font-size: .9rem; line-height: 1.6;
+  }
+  .ia-sugs {
+    display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+    padding: 18px 22px 22px;
+  }
+  .sug {
+    font: inherit; font-size: .82rem; color: var(--ink-soft);
+    background: #f3f5f8; border: 1px solid var(--border);
+    border-radius: 999px; padding: 8px 14px; cursor: pointer;
+  }
+  .sug:hover { background: #e8edf3; color: var(--ink); border-color: var(--border-strong); }
+
+  .ia-chat { padding: 8px 20px 0; max-height: 64vh; overflow-y: auto; }
+  .turn { padding: 14px 0 18px; border-bottom: 1px solid var(--border); }
+  .turn:last-child { border-bottom: none; }
+  .bubble-user {
+    background: #eef3f9; border: 1px solid #dce6f1; border-radius: 10px;
+    padding: 11px 14px; font-size: .94rem; line-height: 1.5; color: #17384f;
+  }
+  .turn-meta {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    margin-top: 12px; font-size: .72rem; color: var(--muted);
+  }
+  .badge {
+    font-size: .66rem; font-weight: 700; letter-spacing: .05em;
+    text-transform: uppercase; padding: 2px 7px; border-radius: 4px;
+    background: #eef1f5; color: var(--ink-soft); border: 1px solid var(--border);
+  }
+  .badge.rag { background: #eaf2fa; color: #1b5f9b; border-color: #cfe3f5; }
+  .badge.direta { background: #eef7f4; color: #0d7a6f; border-color: #c6e5dd; }
+  .badge.sem { background: #fdf6ec; color: #8a5a12; border-color: #f0dda8; }
+
+  .answer { margin-top: 13px; font-size: .96rem; line-height: 1.68; }
+  .answer p { margin: 0 0 11px; }
+  .answer ul { margin: 0 0 11px; padding-left: 20px; }
+  .answer li { margin-bottom: 5px; }
+  .answer .interp {
+    background: #fbfaf6; border-left: 3px solid #d9c98f; border-radius: 0 7px 7px 0;
+    padding: 9px 13px; margin: 0 0 11px; color: #5d5330; font-size: .93rem;
+  }
+  .cite {
+    display: inline-block; font-size: .66rem; font-weight: 700;
+    vertical-align: super; line-height: 1; color: var(--accent);
+    background: #eaf2fa; border: 1px solid #cfe3f5; border-radius: 4px;
+    padding: 2px 4px; margin: 0 1px; cursor: pointer;
+  }
+  .cite:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  .srcs { margin-top: 17px; border-top: 1px solid var(--border); padding-top: 14px; }
+  .srcs-head {
+    display: flex; align-items: center; gap: 8px; margin-bottom: 11px;
+    font-size: .72rem; font-weight: 700; letter-spacing: .07em;
+    text-transform: uppercase; color: var(--muted);
+  }
+  .srcs-head .qtd { color: var(--ink-soft); }
+  .src {
+    border: 1px solid var(--border); border-left: 3px solid var(--accent);
+    border-radius: 9px; padding: 11px 13px; margin-bottom: 8px; background: #fbfcfd;
+  }
+  .src.off { border-left-color: var(--border-strong); background: #fafbfc; }
+  .src-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: .86rem; }
+  .src-n {
+    font-size: .66rem; font-weight: 700; color: #fff; background: var(--accent);
+    border-radius: 4px; padding: 2px 5px; line-height: 1;
+  }
+  .src.off .src-n { background: var(--muted); }
+  .src-norma { font-weight: 600; }
+  .src-disp { color: var(--accent); font-weight: 600; }
+  .src-flag { margin-left: auto; font-size: .7rem; color: var(--muted); }
+  .src-quote {
+    margin: 9px 0 0; padding-left: 11px; border-left: 2px solid var(--border-strong);
+    font-family: 'Source Serif 4', Georgia, serif; font-size: .9rem;
+    line-height: 1.6; color: var(--ink-soft); white-space: pre-wrap;
+  }
+  .src-actions { margin-top: 10px; }
+
+  .ia-composer {
+    display: flex; gap: 10px; align-items: flex-end;
+    padding: 14px 20px; border-top: 1px solid var(--border); background: #fafbfc;
+  }
+  #iaQ {
+    flex: 1; font: inherit; font-size: .97rem; padding: 12px 14px;
+    border: 1px solid var(--border-strong); border-radius: 10px;
+    background: #fff; color: var(--ink); resize: none; line-height: 1.45;
+    min-height: 46px; max-height: 160px;
+  }
+  #iaQ:focus { outline: 2px solid rgba(28,107,176,.35); outline-offset: 1px; border-color: var(--accent); }
+  .ia-foot {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    padding: 11px 20px 14px; font-size: .78rem; color: var(--muted);
+  }
+  .ia-alert {
+    margin: 12px 20px 0; border-radius: 9px; padding: 10px 13px;
+    font-size: .83rem; line-height: 1.55;
+    background: #fdf6ec; border: 1px solid #f0dda8; color: #7a5a12;
+  }
+  .ia-alert.err { background: #fdf3f2; border-color: #f2cfcb; color: #94322a; }
+  .ia-alert.info { background: #f2f8fd; border-color: #cfe3f5; color: #1b5f9b; }
+
+  /* ---------- Painel do indice ---------- */
+  .idx-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(112px, 1fr));
+    gap: 14px; margin-top: 13px;
+  }
+  .idx-cell b {
+    display: block; font-size: 1.14rem; font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .idx-cell span {
+    font-size: .71rem; text-transform: uppercase; letter-spacing: .06em;
+    color: var(--muted);
+  }
+  .idx-token {
+    font: inherit; font-size: .84rem; padding: 8px 11px; width: 190px;
+    border: 1px solid var(--border-strong); border-radius: 8px; background: #fcfcfd;
+  }
+  .legal .destaque {
+    background: var(--mark); border-radius: 4px;
+    box-shadow: 0 0 0 6px var(--mark);
+  }
+
   @media (max-width: 640px) {
     .lede h1 { font-size: 1.55rem; }
     .searchbar { flex-direction: column; }
     .btn { padding: 12px 22px; }
     .legal .b-ementa { margin-left: 0; }
     .doc-head, .doc-body { padding-left: 17px; padding-right: 17px; }
+
+    .modes { flex-wrap: wrap; }
+    .mode { flex: 1; justify-content: center; padding: 9px 6px; font-size: .84rem; }
+    .modes-note { display: none; }
+    .ia-composer { flex-direction: column; align-items: stretch; }
+    .ia-chat { max-height: none; }
+    .ia-hero, .ia-sugs, .ia-chat, .ia-composer, .ia-foot { padding-left: 15px; padding-right: 15px; }
   }
 </style>
 </head>
@@ -320,6 +482,18 @@
 </div>
 
 <div class="wrap">
+
+  <div class="modes">
+    <button class="mode on" id="tabTexto">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round">
+        <circle cx="11" cy="11" r="7"></circle><path d="M20 20l-3.2-3.2"></path></svg>
+      Busca no texto
+    </button>
+    <button class="mode" id="tabIA">✦ Consulta com IA</button>
+    <span class="modes-note" id="modesNote"></span>
+  </div>
+
+<div id="painelTexto">
   <div class="searchcard">
     <div class="searchbar">
       <div class="field">
@@ -373,6 +547,49 @@
     <span id="pageInfo"></span>
     <button class="btn ghost sm" id="nextPage">Próxima ›</button>
   </div>
+</div><!-- /painelTexto -->
+
+<div id="painelIA" hidden>
+  <div class="iacard">
+    <div id="iaHero" class="ia-hero">
+      <h2>Consulta inteligente de legislação</h2>
+      <p>Pergunte em linguagem natural. A resposta é montada a partir dos
+         dispositivos encontrados no acervo de Araras — e sempre vem com as
+         fontes que a sustentam.</p>
+    </div>
+    <div id="iaSugs" class="ia-sugs"></div>
+    <div id="iaAlerta"></div>
+    <div class="ia-chat" id="iaChat"></div>
+    <div class="ia-composer">
+      <textarea id="iaQ" rows="1" placeholder="Ex.: quais normas tratam do transporte escolar no Município?"></textarea>
+      <button class="btn" id="iaSend">Consultar</button>
+    </div>
+    <div class="ia-foot">
+      <span>As respostas usam apenas a legislação cadastrada e podem conter erros — confira sempre o texto oficial.</span>
+      <button class="chip" id="iaNova" style="margin-left:auto">Nova conversa</button>
+      <button class="chip" id="btnIdx" title="Administração do índice de IA">⚙ Índice</button>
+    </div>
+  </div>
+
+  <div class="upd" id="idx" hidden>
+    <div class="upd-top">
+      <strong>Índice da consulta inteligente</strong>
+      <span class="upd-since" id="idxSince"></span>
+      <button class="x" id="idxClose" title="Fechar">✕</button>
+    </div>
+    <p class="upd-msg" id="idxMsg">Cada artigo do acervo vira um trecho pesquisável com seu próprio vetor. Só o que mudou é reprocessado.</p>
+    <div class="idx-grid" id="idxGrid"></div>
+    <div class="bar" id="idxBar" hidden><i id="idxFill"></i></div>
+    <div class="upd-actions">
+      <input type="password" class="idx-token" id="idxToken" placeholder="Token administrativo">
+      <button class="btn sm" id="btnIdxPend">Indexar pendentes</button>
+      <button class="btn ghost sm" id="btnIdxFull" title="Refaz a divisão de todos os atos e revetoriza o que mudar">Reindexar tudo</button>
+      <button class="btn ghost sm" id="btnIdxStop" hidden>Interromper</button>
+      <span class="upd-note" id="idxNote"></span>
+    </div>
+    <div class="upd-err" id="idxErr" hidden></div>
+  </div>
+</div><!-- /painelIA -->
 </div>
 
 <div class="overlay" id="overlay">
@@ -475,7 +692,9 @@ function renderLegal(blocos) {
       html += '</div>'; signOpen = false;
     }
     if (t === 'artigo') {
-      html += `<p class="b-artigo">${txt.replace(/^(Art(?:igo)?\.?\s*\d+[ºo°]?[)\.]?)/i,
+      const m = b.texto.match(/^Art(?:igo)?\.?\s*(\d+)/i);
+      const art = m ? String(parseInt(m[1], 10)) : '';
+      html += `<p class="b-artigo" data-art="${art}">${txt.replace(/^(Art(?:igo)?\.?\s*\d+[ºo°]?[)\.]?)/i,
         '<span class="artnum">$1</span>')}</p>`;
     } else {
       html += `<p class="b-${t}">${txt}</p>`;
@@ -503,7 +722,7 @@ function renderSummary(raw) {
   return html;
 }
 
-async function openDoc(id) {
+async function openDoc(id, alvoArt) {
   const a = await (await fetch(`/api/ato/${id}`)).json();
   currentAto = a;
   $('doc').innerHTML = `
@@ -533,6 +752,15 @@ async function openDoc(id) {
   $('overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
   if (a.resumo) showSummary(a.resumo, true);
+
+  // Fonte citada pela IA: leva o leitor direto ao dispositivo.
+  if (alvoArt) {
+    const el = $('doc').querySelector(`.b-artigo[data-art="${CSS.escape(String(alvoArt))}"]`);
+    if (el) {
+      el.classList.add('destaque');
+      setTimeout(() => el.scrollIntoView({ block: 'center', behavior: 'smooth' }), 60);
+    }
+  }
 }
 
 function showSummary(texto, cached) {
@@ -655,6 +883,292 @@ $('btnPainel').addEventListener('click', () => {
 $('updClose').addEventListener('click', () => $('upd').hidden = true);
 $('btnUpd').addEventListener('click', () => startUpd(false));
 $('btnUpdFull').addEventListener('click', () => startUpd(true));
+
+
+/* ================================================================
+   Consulta inteligente (RAG)
+   ================================================================ */
+const SUGESTOES = [
+  'Quais normas tratam do transporte escolar no Município?',
+  'O que a legislação exige na prestação de contas de entidades?',
+  'Quando o Município pode contratar sem licitação?',
+  'O que dispõe o Decreto nº 7.983?',
+];
+
+let iaConversa = null, iaOcupado = false, iaTurnos = 0;
+
+function trocarModo(modo) {
+  const ia = modo === 'ia';
+  $('painelIA').hidden = !ia;
+  $('painelTexto').hidden = ia;
+  $('tabIA').classList.toggle('on', ia);
+  $('tabTexto').classList.toggle('on', !ia);
+  if (ia) { iaStatus(); setTimeout(() => $('iaQ').focus(), 30); }
+}
+
+/* ---------- estado do índice ---------- */
+async function iaStatus() {
+  try {
+    const st = await (await fetch('/api/ia/status')).json();
+    const nota = $('modesNote');
+    if (!st.chave_configurada) {
+      nota.textContent = 'IA sem chave configurada';
+      iaAlerta('err', 'A chave da API de IA não está configurada no servidor. ' +
+        'A consulta inteligente fica indisponível até que GEMINI_API_KEY seja definida.');
+      $('iaSend').disabled = true;
+      return;
+    }
+    nota.textContent = st.pendentes
+      ? `índice: ${nf(st.indexados)} de ${nf(st.dispositivos)} dispositivos`
+      : `índice: ${nf(st.indexados)} dispositivos`;
+    if (!st.busca_semantica) {
+      iaAlerta('info', 'O índice semântico ainda não foi gerado — as consultas ' +
+        'usam apenas a busca textual. Rode a indexação no painel ⚙ Índice.');
+    } else if (st.pendentes > 0) {
+      iaAlerta('info', `${nf(st.pendentes)} dispositivo(s) ainda sem vetor` +
+        (st.indexando ? ' (indexação em andamento).' : '. A busca já funciona com o que está indexado.'));
+    } else iaAlerta(null);
+  } catch (e) { /* status é informativo; falha não bloqueia a consulta */ }
+}
+
+function iaAlerta(tipo, texto) {
+  $('iaAlerta').innerHTML = tipo
+    ? `<div class="ia-alert ${tipo === 'info' ? 'info' : tipo}">${esc(texto)}</div>` : '';
+}
+
+/* ---------- renderização da resposta ---------- */
+function renderResposta(texto, fontes) {
+  const linhas = (texto || '').split('\n');
+  let html = '', lista = [];
+  const flush = () => { if (lista.length) { html += `<ul>${lista.join('')}</ul>`; lista = []; } };
+
+  const inline = t => esc(t)
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\[F(\d{1,3})\]/g, (m, n) => {
+      const f = (fontes || []).find(x => x.n === +n);
+      if (!f) return '';
+      return `<span class="cite" data-ato="${f.ato_id}" data-art="${f.artigo || ''}"` +
+             ` title="${esc(f.rotulo)}">F${n}</span>`;
+    });
+
+  for (const bruta of linhas) {
+    const l = bruta.trim();
+    if (!l) { flush(); continue; }
+    if (/^[-*•]\s+/.test(l)) { lista.push(`<li>${inline(l.replace(/^[-*•]\s+/, ''))}</li>`); continue; }
+    flush();
+    if (/^#{1,6}\s/.test(l)) { html += `<p><strong>${inline(l.replace(/^#{1,6}\s*/, ''))}</strong></p>`; continue; }
+    if (/^interpreta[çc][ãa]o\s*:/i.test(l)) { html += `<p class="interp">${inline(l)}</p>`; continue; }
+    html += `<p>${inline(l)}</p>`;
+  }
+  flush();
+  return html;
+}
+
+function renderFontes(fontes) {
+  if (!fontes || !fontes.length) return '';
+  const usadas = fontes.filter(f => f.usada).length;
+  const itens = fontes.map(f => `
+    <div class="src ${f.usada ? '' : 'off'}">
+      <div class="src-top">
+        <span class="src-n">F${f.n}</span>
+        <span class="src-norma">📖 ${esc(f.norma)}</span>
+        ${f.dispositivo ? `<span class="src-disp">${esc(f.dispositivo)}</span>` : ''}
+        ${f.usada ? '' : '<span class="src-flag">consultada, não citada</span>'}
+      </div>
+      <div class="src-quote">${esc(f.trecho)}</div>
+      <div class="src-actions">
+        <button class="btn ghost sm" data-ato="${f.ato_id}" data-art="${f.artigo || ''}">Ver legislação</button>
+      </div>
+    </div>`).join('');
+  return `<div class="srcs">
+      <div class="srcs-head">Fontes utilizadas
+        <span class="qtd">· ${usadas || fontes.length} dispositivo(s) ${usadas ? 'citado(s)' : 'encontrado(s)'}</span>
+      </div>${itens}</div>`;
+}
+
+const ROTULO_MODO = {
+  rag: ['rag', 'resposta com IA'],
+  direta: ['direta', 'texto literal · sem IA'],
+  sem_base: ['sem', 'sem base no acervo'],
+};
+
+function renderTurno(d) {
+  const [cls, rotulo] = ROTULO_MODO[d.modo] || ROTULO_MODO.rag;
+  const ms = d.ms ? `${(d.ms.total / 1000).toFixed(1)}s` : '';
+  const filtros = d.interpretacao && Object.keys(d.interpretacao).length
+    ? Object.entries(d.interpretacao).map(([k, v]) =>
+        `${k}: ${Array.isArray(v) ? v.join(', ') : v}`).join(' · ') : '';
+  return `
+    <div class="answer">${renderResposta(d.resposta, d.fontes)}</div>
+    ${renderFontes(d.fontes)}
+    <div class="turn-meta">
+      <span class="badge ${cls}">${rotulo}</span>
+      ${d.cache ? '<span class="badge">do cache</span>' : ''}
+      ${filtros ? `<span>filtros detectados — ${esc(filtros)}</span>` : ''}
+      ${ms ? `<span>· ${ms}</span>` : ''}
+    </div>`;
+}
+
+function ligarFontes(el) {
+  el.querySelectorAll('.src-actions button, .cite').forEach(b =>
+    b.addEventListener('click', () =>
+      openDoc(b.dataset.ato, b.dataset.art || null)));
+}
+
+/* ---------- envio ---------- */
+async function iaEnviar(pergunta) {
+  pergunta = (pergunta ?? $('iaQ').value).trim();
+  if (!pergunta || iaOcupado) return;
+
+  iaOcupado = true;
+  $('iaSend').disabled = true;
+  $('iaQ').value = '';
+  $('iaQ').style.height = 'auto';
+  $('iaHero').hidden = true;
+  $('iaSugs').hidden = true;
+
+  const id = `turno${++iaTurnos}`;
+  $('iaChat').insertAdjacentHTML('beforeend', `
+    <div class="turn" id="${id}">
+      <div class="bubble-user">${esc(pergunta)}</div>
+      <div class="answer" id="${id}-corpo">
+        <span class="spinner"></span> Procurando na legislação cadastrada…
+      </div>
+    </div>`);
+  const turno = $(id);
+  turno.scrollIntoView({ block: 'start', behavior: 'smooth' });
+
+  try {
+    const r = await fetch('/api/ia/perguntar', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pergunta, conversa_id: iaConversa }),
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || 'falha na consulta');
+    iaConversa = d.conversa_id || iaConversa;
+    turno.innerHTML = `<div class="bubble-user">${esc(pergunta)}</div>` + renderTurno(d);
+    if (d.aviso) turno.insertAdjacentHTML('beforeend',
+      `<div class="ia-alert info" style="margin:12px 0 0">${esc(d.aviso)}</div>`);
+    ligarFontes(turno);
+  } catch (e) {
+    $(`${id}-corpo`).innerHTML =
+      `<div class="ia-alert err" style="margin:0">${esc(e.message)}</div>`;
+  } finally {
+    iaOcupado = false;
+    $('iaSend').disabled = false;
+    $('iaQ').focus();
+  }
+}
+
+function iaNovaConversa() {
+  iaConversa = null;
+  $('iaChat').innerHTML = '';
+  $('iaHero').hidden = false;
+  $('iaSugs').hidden = false;
+  iaStatus();
+}
+
+/* ---------- painel do índice ---------- */
+let idxTimer = null;
+
+function idxToken() { return $('idxToken').value.trim(); }
+
+async function idxFetch(url, opts = {}) {
+  const t = idxToken();
+  if (t) localStorage.setItem('araras_admin_token', t);
+  const headers = Object.assign({ 'Content-Type': 'application/json' },
+    t ? { 'X-Admin-Token': t } : {});
+  const r = await fetch(url, Object.assign({ headers }, opts));
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(d.error || `erro ${r.status}`);
+  return d;
+}
+
+function pintarIdx(d) {
+  const i = d.indice || {}, j = d.job || {};
+  $('idxGrid').innerHTML = [
+    ['Legislações', i.legislacoes], ['Dispositivos', i.dispositivos],
+    ['Artigos', i.artigos], ['Indexados', i.indexados],
+    ['Pendentes', i.pendentes],
+  ].map(([r, v]) => `<div class="idx-cell"><b>${nf(v || 0)}</b><span>${r}</span></div>`).join('') +
+    `<div class="idx-cell"><b>${(i.cobertura ?? 0)}%</b><span>cobertura</span></div>`;
+
+  $('idxSince').textContent = i.ultima_indexacao
+    ? `última indexação: ${i.ultima_indexacao.replace('T', ' ').slice(0, 16)}` : 'nunca indexado';
+  if (j.mensagem) $('idxMsg').textContent = j.mensagem;
+
+  const rodando = !!j.running;
+  $('btnIdxPend').disabled = rodando;
+  $('btnIdxFull').disabled = rodando;
+  $('btnIdxStop').hidden = !rodando;
+
+  const total = j.chunks_total || j.atos_total || 0;
+  const feito = j.chunks_total ? j.chunks_feitos : j.atos_feitos;
+  $('idxBar').hidden = !(rodando && total);
+  if (rodando && total) $('idxFill').style.width = `${Math.round(100 * feito / total)}%`;
+  $('idxNote').textContent = rodando && total ? `${nf(feito)}/${nf(total)}` : '';
+
+  const erros = (j.erros || []).concat(
+    (i.atos_com_erro || []).map(e => `ato ${e.ato_id}: ${e.erro}`));
+  $('idxErr').hidden = !erros.length;
+  if (erros.length) $('idxErr').innerHTML = erros.map(esc).join('<br>');
+
+  if (!rodando && idxTimer) { clearInterval(idxTimer); idxTimer = null; iaStatus(); }
+}
+
+async function idxPoll() {
+  try { pintarIdx(await idxFetch('/api/ia/admin/indexar/status')); }
+  catch (e) {
+    $('idxMsg').textContent = e.message;
+    if (idxTimer) { clearInterval(idxTimer); idxTimer = null; }
+  }
+}
+
+async function idxIniciar(corpo) {
+  try {
+    await idxFetch('/api/ia/admin/indexar',
+      { method: 'POST', body: JSON.stringify(corpo) });
+    if (!idxTimer) idxTimer = setInterval(idxPoll, 1500);
+    idxPoll();
+  } catch (e) { $('idxMsg').textContent = e.message; }
+}
+
+/* ---------- ligações ---------- */
+$('tabTexto').addEventListener('click', () => trocarModo('texto'));
+$('tabIA').addEventListener('click', () => trocarModo('ia'));
+$('iaSend').addEventListener('click', () => iaEnviar());
+$('iaNova').addEventListener('click', iaNovaConversa);
+$('iaQ').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); iaEnviar(); }
+});
+$('iaQ').addEventListener('input', e => {
+  e.target.style.height = 'auto';
+  e.target.style.height = Math.min(e.target.scrollHeight, 160) + 'px';
+});
+$('iaSugs').innerHTML = SUGESTOES.map(t => `<button class="sug">${esc(t)}</button>`).join('');
+$('iaSugs').addEventListener('click', e => {
+  if (e.target.classList.contains('sug')) iaEnviar(e.target.textContent);
+});
+
+$('btnIdx').addEventListener('click', () => {
+  const p = $('idx');
+  p.hidden = !p.hidden;
+  if (!p.hidden) {
+    $('idxToken').value = localStorage.getItem('araras_admin_token') || '';
+    idxPoll();
+  }
+});
+$('idxClose').addEventListener('click', () => $('idx').hidden = true);
+$('btnIdxPend').addEventListener('click', () => idxIniciar({}));
+$('btnIdxFull').addEventListener('click', () => {
+  if (confirm('Refazer a divisão de todos os atos e revetorizar o que mudar? ' +
+              'Pode levar horas e consome cota da API.')) idxIniciar({ forcar: true });
+});
+$('btnIdxStop').addEventListener('click', () =>
+  idxFetch('/api/ia/admin/indexar/cancelar', { method: 'POST' }).then(idxPoll));
+
+iaStatus();
 
 loadStats(); loadAnos(); search(1);
 pollUpd().then(() => {  // se uma atualização já estiver rodando, mostra o painel
