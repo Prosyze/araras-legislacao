@@ -159,7 +159,8 @@ def perguntar(conn, pergunta_bruta, conversa_id=None, cliente_hash=None,
     t_busca = time.perf_counter()
     vetor = None
     aviso_semantica = None
-    if embeddings.disponivel() and vectorstore.versao_indice(conn)[0]:
+    cobertura = vectorstore.cobertura(conn)
+    if embeddings.disponivel() and cobertura >= settings.COBERTURA_MINIMA:
         try:
             vetor = embeddings.embed_consulta(pergunta_busca)
         except Exception as e:  # noqa: BLE001 — sem vetor a busca segue textual
@@ -168,9 +169,15 @@ def perguntar(conn, pergunta_bruta, conversa_id=None, cliente_hash=None,
             _logar(conn, conversa_id=conversa_id, pergunta=pergunta,
                    estrategia='embedding_falhou', erro=str(e)[:400],
                    cliente_hash=cliente_hash)
-    elif not vectorstore.versao_indice(conn)[0]:
+    elif not cobertura:
         aviso_semantica = ('O índice semântico ainda não foi gerado; a consulta '
                            'usou apenas a busca textual.')
+    else:
+        # Índice pela metade é pior que índice nenhum: os poucos trechos com
+        # vetor subiriam ao topo de qualquer pergunta.
+        aviso_semantica = ('O índice semântico está em %.0f%% do acervo; a '
+                           'consulta usou apenas a busca textual.'
+                           % (100 * cobertura))
 
     candidatos, diag = retrieval.recuperar(conn, consulta, vetor)
     pontuados = rerank.pontuar(candidatos, consulta, diag['atos_referenciados'])

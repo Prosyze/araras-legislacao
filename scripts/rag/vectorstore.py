@@ -28,6 +28,21 @@ def versao_indice(conn):
     return tuple(row)
 
 
+def cobertura(conn):
+    """Fracao dos dispositivos que ja tem vetor, entre 0 e 1.
+
+    Enquanto a indexacao caminha, o que existe de vetor e um recorte
+    arbitrario do acervo — e um recorte enviesado, porque o job avanca em
+    ordem. Fundir esse recorte com a busca textual nao melhora a resposta:
+    empurra os poucos trechos vetorizados para o topo, seja qual for a
+    pergunta.
+    """
+    n_chunks = conn.execute('SELECT count(*) FROM ato_chunks').fetchone()[0]
+    if not n_chunks:
+        return 0.0
+    return versao_indice(conn)[0] / n_chunks
+
+
 def invalidar():
     with _lock:
         _cache.update(chave=None, ids=None, mat=None, versao=None)

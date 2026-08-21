@@ -115,6 +115,48 @@ def _fts_expr(termos, modo='and'):
     return juncao.join(f'{t}*' for t in limpos)
 
 
+# Abaixo disto a conjunção rendeu candidatos de menos para o rerank ter o que
+# escolher, e vale procurar uma conjunção mais folgada.
+MIN_TEXTUAIS = 10
+
+# Quantas palavras a busca pode abrir mão antes de desistir da conjunção. Duas
+# já cobrem o "quais normas tratam de..." que abre quase toda pergunta.
+MAX_DESCARTES = 3
+
+
+def _maior_conjuncao(termos, contar, minimo=MIN_TEXTUAIS):
+    """Maior subconjunto dos termos que o acervo ainda satisfaz junto.
+
+    A pergunta traz palavras que falam *sobre* a consulta — "quais normas
+    tratam do transporte escolar" — e que não aparecem em texto de lei.
+    Exigir todas na conjunção zera o resultado; cair direto no OR entrega o
+    ranking a qualquer trecho que cite uma palavra sozinha, e uma linha de
+    dotação orçamentária com "escolar" passa à frente da lei que regulamenta
+    o serviço. Entre os dois extremos, descarta-se uma palavra de cada vez:
+    sai aquela cuja ausência mais amplia o resultado.
+    """
+    if len(termos) < 2:
+        return termos
+    atual = list(termos)
+    n = contar(_fts_expr(atual, 'and') or '')
+    for _ in range(MAX_DESCARTES):
+        if n >= minimo or len(atual) <= 2:
+            break
+        melhor, melhor_n = None, n
+        for t in atual:
+            candidato = [x for x in atual if x != t]
+            expr = _fts_expr(candidato, 'and')
+            if not expr:
+                continue
+            c = contar(expr)
+            if c > melhor_n:
+                melhor, melhor_n = candidato, c
+        if melhor is None:
+            break
+        atual, n = melhor, melhor_n
+    return atual
+
+
 def busca_textual(conn, consulta, limite, permitidos=None):
     termos = consulta.termos or [t for t in re.findall(
         r'[\wÀ-ÿ]{3,}', consulta.pergunta)]
@@ -137,6 +179,19 @@ def busca_textual(conn, consulta, limite, permitidos=None):
         """
         return conn.execute(sql, [expr] + params_filtro + [limite]).fetchall()
 
+    def contar(expr):
+        sql = f"""
+            SELECT count(*) FROM chunks_fts
+              JOIN ato_chunks c ON c.id = chunks_fts.rowid
+             WHERE chunks_fts MATCH ?{filtro}
+        """
+        try:
+            return conn.execute(sql, [expr] + params_filtro).fetchone()[0]
+        except Exception:  # noqa: BLE001 — expressão inválida conta como zero
+            return 0
+
+    termos = _maior_conjuncao(termos, contar)
+
     rows = []
     expr = _fts_expr(termos, 'and')
     if expr:
@@ -145,7 +200,7 @@ def busca_textual(conn, consulta, limite, permitidos=None):
         except Exception:  # noqa: BLE001 — expressão inválida vira busca OR
             rows = []
     # Poucos resultados com AND: relaxa para OR e deixa o BM25 ordenar.
-    if len(rows) < 5:
+    if len(rows) < MIN_TEXTUAIS:
         expr_or = _fts_expr(termos, 'or')
         if expr_or:
             try:

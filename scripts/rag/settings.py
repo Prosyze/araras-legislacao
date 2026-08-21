@@ -40,6 +40,9 @@ EMBED_BATCH = _int('RAG_EMBED_BATCH', 24)
 # Free tier: 100 requisições/minuto por modelo, contando item a item.
 EMBED_RPM = _int('RAG_EMBED_RPM', 96)
 EMBED_MAX_CHARS = _int('RAG_EMBED_MAX_CHARS', 8000)
+# Abaixo desta cobertura do acervo a busca vetorial atrapalha em vez de
+# ajudar, e a consulta fica só com a textual (ver vectorstore.cobertura).
+COBERTURA_MINIMA = _float('RAG_COBERTURA_MINIMA', 0.9)
 
 # --------------------------------------------------------------- chunking
 CHUNK_MAX_CHARS = _int('RAG_CHUNK_MAX_CHARS', 3000)
@@ -95,6 +98,7 @@ def resumo():
     return {
         'embed_model': EMBED_MODEL, 'embed_dim': EMBED_DIM,
         'embed_batch': EMBED_BATCH, 'embed_rpm': EMBED_RPM,
+        'cobertura_minima': COBERTURA_MINIMA,
         'top_candidatos': TOP_CANDIDATOS, 'top_contexto': TOP_CONTEXTO,
         'chat_model': CHAT_MODEL, 'rerank_llm': RERANK_LLM,
         'cache_ativo': CACHE_ATIVO, 'atalho_citacao': ATALHO_CITACAO,
