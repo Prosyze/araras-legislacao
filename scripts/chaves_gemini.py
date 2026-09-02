@@ -16,10 +16,12 @@ import logging
 import os
 import threading
 
+QUOTA = ('429', 'RESOURCE_EXHAUSTED', 'quota')
+
 # Quota estourada ou credencial recusada: a proxima chave pode dar certo.
 # 503/500 nao entram -- sobrecarga do servico atinge todas por igual.
-TROCA_DE_CHAVE = ('429', 'RESOURCE_EXHAUSTED', 'quota', 'API_KEY_INVALID',
-                  'API key not valid', 'PERMISSION_DENIED')
+TROCA_DE_CHAVE = QUOTA + ('API_KEY_INVALID', 'API key not valid',
+                          'PERMISSION_DENIED')
 
 _log = logging.getLogger(__name__)
 
@@ -84,6 +86,18 @@ def vale_trocar(e):
     """O erro e do tipo que outra chave pode resolver?"""
     s = str(e)
     return any(marca in s for marca in TROCA_DE_CHAVE)
+
+
+def cota_diaria(e):
+    """A cota que acabou e a do dia, e nao a do minuto?
+
+    Sao os dois 429 da API, e a diferenca muda tudo: o do minuto passa com
+    alguns segundos de espera, o do dia so na virada. O erro traz o quotaId,
+    e a janela vem escrita nele -- ...RequestsPerDayPerUser...
+    """
+    s = str(e)
+    return (any(marca in s for marca in QUOTA)
+            and ('PerDay' in s or 'per day' in s))
 
 
 def em_uso():

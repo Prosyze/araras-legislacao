@@ -157,6 +157,11 @@ def _embed(textos, task_type, tentativas=5):
                 giros += 1
                 _limitador.reiniciar()
                 continue
+            # Sem chave com cota sobrando, a do dia so volta na virada: os
+            # 59s que a API sugere nao valem para essa janela, e insistir
+            # cinco vezes por lote gasta minutos para nao gerar nada.
+            if chaves_gemini.cota_diaria(e):
+                raise
             if not _transitorio(e):
                 raise
             espera = _espera_sugerida(e, tentativa)

@@ -249,6 +249,14 @@ def _vetorizar(conn, pendentes, total, lote, progresso):
         except Exception as e:  # noqa: BLE001 — lote ruim não para a rodada
             _erro(f'lote {ini}-{ini + len(fatia)}: {e}')
             _set(chunks_feitos=min(ini + len(fatia), total))
+            # Lote ruim não para a rodada, mas cota do dia esgotada sim: se
+            # nem a última chave tem saldo, os lotes seguintes vão falhar
+            # igual, e o que já foi gerado fica gravado de qualquer forma.
+            if chaves_gemini.cota_diaria(e):
+                _erro(f'cota diária esgotada nas {chaves_gemini.total()} '
+                      f'chave(s); encerrando a rodada — retome amanhã, o que '
+                      f'já foi gerado está gravado')
+                break
             continue
 
         agora = _agora()
