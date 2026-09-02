@@ -80,13 +80,48 @@ def clean_snippet(s):
     return s.replace('@@M@@', '<mark>').replace('@@/M@@', '</mark>')
 
 
+# Numero com separador de milhar precisa ser lido inteiro: caindo no padrao
+# generico, o ponto vira fronteira e "1.620" ja chega quebrado em dois termos.
+TERMO_RE = re.compile(r'\d{1,3}(?:[.,]\d{3})+|[\w\-]+', re.UNICODE)
+
+
 def fts_query(raw_q):
-    """Turn free-text user input into a safe FTS5 MATCH query: AND of terms,
-    each as a prefix match, so partial words still find results."""
-    terms = re.findall(r'[\w\-]+', raw_q, flags=re.UNICODE)
-    if not terms:
+    """Turn free-text user input into a safe FTS5 MATCH query: AND of terms.
+
+    Palavra vai como prefixo, para achar com digitacao parcial. Numero vai
+    exato: como prefixo, "1.620" viraria `1* AND 620*` e casaria com todo ato
+    que tivesse um numero comecando em 1 e outro em 620 -- valor, CNPJ, o que
+    fosse. O tokenizador quebra no ponto, entao a grafia com separador so e
+    alcancada como frase, e a sem separador entra junto num OR. Cada termo vai
+    entre aspas porque o hifen nao e valido em termo solto do FTS5.
+    """
+    termos = []
+    for bruto in TERMO_RE.findall(raw_q):
+        if '.' in bruto or ',' in bruto:
+            termos.append(f'("{bruto}" OR {re.sub(r"[^0-9]", "", bruto)})')
+        elif bruto.isdigit():
+            termos.append(bruto)
+        else:
+            termos.append(f'"{bruto}"*')
+    if not termos:
         return None
-    return ' AND '.join(f'{t}*' for t in terms)
+    return ' AND '.join(termos)
+
+
+def numeros_de_ato(raw_q):
+    """Digitos da consulta que podem ser o numero de um ato, sem o separador.
+
+    So conta termo que e numero por inteiro: em "covid-19" o 19 faz parte da
+    palavra e nao deve trazer o Decreto Legislativo 19 para o topo.
+    """
+    achados = []
+    for bruto in TERMO_RE.findall(raw_q):
+        d = re.sub(r'[^0-9]', '', bruto)
+        if d != re.sub(r'[.,]', '', bruto):
+            continue
+        if 0 < len(d) <= 6 and d not in achados:
+            achados.append(d)
+    return achados
 
 
 @app.route('/')
@@ -133,8 +168,36 @@ def search():
         params.append(ano)
 
     fts = fts_query(q) if q else None
+    # Quem digita "1.620" na caixa quer a Lei 1.620, e nao os atos cujo texto
+    # por acaso cita esse numero -- entao o numero do ato entra na busca junto
+    # com o texto, e vem antes na ordenacao.
+    alvos = numeros_de_ato(q) if fts else []
 
-    if fts:
+    if fts and alvos:
+        cond_num = "REPLACE(a.numero, '.', '') IN (%s)" % ','.join('?' * len(alvos))
+        where_sql = (' AND ' + ' AND '.join(where)) if where else ''
+        base = f"""
+            WITH achados AS (
+                SELECT rowid AS id,
+                       snippet(atos_fts, 1, '@@M@@', '@@/M@@', '…', 20) AS trecho
+                FROM atos_fts WHERE atos_fts MATCH ?
+            )
+            SELECT %s
+            FROM atos a LEFT JOIN achados h ON h.id = a.id
+            WHERE (h.id IS NOT NULL OR {cond_num}) {where_sql}
+        """
+        colunas = """a.id, a.edicao, a.tipo, a.numero, a.data_ato, a.titulo,
+                     COALESCE(h.trecho, substr(a.texto, 1, 220)) AS trecho,
+                     (a.resumo IS NOT NULL) AS tem_resumo"""
+        sql = (base % colunas) + f"""
+            ORDER BY {cond_num} DESC,
+                     {DATE_ASC if ordem == 'antigos' else DATE_DESC}
+            LIMIT ? OFFSET ?
+        """
+        args = [fts] + alvos + params
+        rows = db.execute(sql, args + alvos + [page_size, offset]).fetchall()
+        total = db.execute(base % 'count(*)', args).fetchone()[0]
+    elif fts:
         where_sql = (' AND ' + ' AND '.join(where)) if where else ''
         sql = f"""
             SELECT a.id, a.edicao, a.tipo, a.numero, a.data_ato, a.titulo,
