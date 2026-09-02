@@ -21,6 +21,7 @@ diario-oficial-*.json
 
 # Execução local
 server.log
+scripts/indexacao_local.log
 __pycache__/
 *.pyc
 scratch_*

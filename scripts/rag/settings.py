@@ -26,17 +26,25 @@ def _bool(nome, padrao=False):
 
 
 # ---------------------------------------------------------------- embeddings
-EMBED_MODEL = os.environ.get('RAG_EMBED_MODEL', 'gemini-embedding-001')
+# 'gemini' (padrão, também usado em produção) ou 'local' — roda um modelo
+# sentence-transformers na própria máquina, sem depender da cota de API.
+# Trocar o backend muda o nome do modelo, e a tabela chunk_embeddings guarda
+# o vetor por (chunk_id, modelo, dim): tudo que foi indexado sob o modelo
+# anterior vira "pendente" de novo automaticamente, sem migração manual.
+EMBED_BACKEND = os.environ.get('RAG_EMBED_BACKEND', 'gemini').strip().lower()
+_EMBED_MODEL_PADRAO = ('intfloat/multilingual-e5-base' if EMBED_BACKEND == 'local'
+                        else 'gemini-embedding-001')
+EMBED_MODEL = os.environ.get('RAG_EMBED_MODEL', _EMBED_MODEL_PADRAO)
 # 768 é o ponto de equilíbrio do gemini-embedding-001 (MRL): custa 1/4 do
-# vetor completo e mantém a qualidade de recuperação.
+# vetor completo e mantém a qualidade de recuperação. Coincide com a
+# dimensão nativa do multilingual-e5-base, então dá pra manter um só valor.
 EMBED_DIM = _int('RAG_EMBED_DIM', 768)
-# Cada item do lote conta como uma requisição na quota, então o lote não
-# adianta nada contra o limite — serve só para reduzir round-trips.
-#
-# O lote precisa dividir o RPM: como a janela só libera um lote inteiro,
-# 32 num teto de 90 deixa 2 lotes por minuto (64/min) e desperdiça 29% da
-# cota. 24 em 96 fecha exatamente 4 lotes por minuto.
-EMBED_BATCH = _int('RAG_EMBED_BATCH', 24)
+# No backend Gemini cada item do lote conta como uma requisição na quota, e
+# o lote precisa dividir o RPM: como a janela só libera um lote inteiro, 32
+# num teto de 90 deixa 2 lotes por minuto (64/min) e desperdiça 29% da cota;
+# 24 em 96 fecha exatamente 4 lotes por minuto. No backend local não há
+# quota — o lote só afeta o uso de memória durante o encode.
+EMBED_BATCH = _int('RAG_EMBED_BATCH', 64 if EMBED_BACKEND == 'local' else 24)
 # Free tier: 100 requisições/minuto por modelo, contando item a item.
 EMBED_RPM = _int('RAG_EMBED_RPM', 96)
 EMBED_MAX_CHARS = _int('RAG_EMBED_MAX_CHARS', 8000)

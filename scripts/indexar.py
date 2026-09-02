@@ -86,9 +86,13 @@ def main():
             print('Nenhum vetor pendente.')
         else:
             alvo = min(pendentes, args.limite) if args.limite else pendentes
-            estimativa = alvo / max(1, settings.EMBED_RPM)
-            print(f'{pendentes} pendente(s); gerando {alvo} '
-                  f'(~{estimativa:.0f} min no ritmo de {settings.EMBED_RPM}/min).')
+            if settings.EMBED_BACKEND == 'local':
+                print(f'{pendentes} pendente(s); gerando {alvo} '
+                      f'(backend local, modelo {settings.EMBED_MODEL}).')
+            else:
+                estimativa = alvo / max(1, settings.EMBED_RPM)
+                print(f'{pendentes} pendente(s); gerando {alvo} '
+                      f'(~{estimativa:.0f} min no ritmo de {settings.EMBED_RPM}/min).')
             print('Pode interromper com Ctrl+C — o progresso já gravado fica.')
             try:
                 indexer.gerar_embeddings(
