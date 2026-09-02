@@ -1094,8 +1094,16 @@ function pintarIdx(d) {
   ].map(([r, v]) => `<div class="idx-cell"><b>${nf(v || 0)}</b><span>${r}</span></div>`).join('') +
     `<div class="idx-cell"><b>${(i.cobertura ?? 0)}%</b><span>cobertura</span></div>`;
 
-  $('idxSince').textContent = i.ultima_indexacao
-    ? `última indexação: ${i.ultima_indexacao.replace('T', ' ').slice(0, 16)}` : 'nunca indexado';
+  const ch = i.chaves || {};
+  // Sem isso não dá para saber se a cota que estourou é de uma chave só ou
+  // de todas — o log mostra o 429, não de quem ele veio.
+  const chaveNota = ch.total > 1
+    ? ` · chave ${ch.atual}/${ch.total} (final ${ch.final})`
+      + (ch.giros ? ` · ${ch.giros} troca(s) por falta de cota` : '')
+    : (ch.total === 1 ? ' · 1 chave, sem reserva' : '');
+  $('idxSince').textContent = (i.ultima_indexacao
+    ? `última indexação: ${i.ultima_indexacao.replace('T', ' ').slice(0, 16)}`
+    : 'nunca indexado') + chaveNota;
   if (j.mensagem) $('idxMsg').textContent = j.mensagem;
 
   const rodando = !!j.running;

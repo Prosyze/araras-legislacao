@@ -17,6 +17,8 @@ import sqlite3
 import threading
 from datetime import datetime, timezone
 
+import chaves_gemini
+
 from . import embeddings, schema, settings, vectorstore
 from .chunker import chunk_ato, hash_ato, texto_para_embedding
 
@@ -200,7 +202,12 @@ def contar_pendentes(conn):
 
 def gerar_embeddings(conn, limite=None, progresso=None):
     """Vetoriza os dispositivos pendentes. Grava a cada lote, então uma
-    interrupção só perde o lote em andamento."""
+    interrupção só perde o lote em andamento.
+
+    Enquanto roda, a troca de chave por falta de cota aparece na mesma lista
+    dos erros de lote: numa rodada longa é o que explica por que ela parou —
+    ou por que seguiu.
+    """
     if not embeddings.disponivel():
         raise embeddings.EmbeddingIndisponivel(
             'GEMINI_API_KEY não configurada — não é possível gerar embeddings.')
@@ -212,9 +219,18 @@ def gerar_embeddings(conn, limite=None, progresso=None):
 
     total = len(pendentes)
     _set(chunks_total=total, chunks_feitos=0)
-    feitos = 0
     lote = settings.EMBED_BATCH
+    chaves_gemini.ao_girar = _erro
+    try:
+        feitos = _vetorizar(conn, pendentes, total, lote, progresso)
+    finally:
+        chaves_gemini.ao_girar = None
+    vectorstore.invalidar()
+    return feitos
 
+
+def _vetorizar(conn, pendentes, total, lote, progresso):
+    feitos = 0
     for ini in range(0, total, lote):
         if _cancelar.is_set():
             break
@@ -254,7 +270,6 @@ def gerar_embeddings(conn, limite=None, progresso=None):
         if progresso:
             progresso(feitos, total)
 
-    vectorstore.invalidar()
     return feitos
 
 
@@ -378,4 +393,5 @@ def estatisticas(conn):
         'dim': dim,
         'busca_semantica_pronta': indexados > 0,
         'chave_configurada': embeddings.disponivel(),
+        'chaves': chaves_gemini.em_uso(),
     }

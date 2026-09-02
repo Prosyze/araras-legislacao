@@ -12,6 +12,7 @@ em sobrecarga do servico.
 As reservas vao no ambiente como GEMINI_API_KEY_FALLBACK_1, _2, ... A
 varredura para no primeiro numero ausente.
 """
+import logging
 import os
 import threading
 
@@ -20,8 +21,16 @@ import threading
 TROCA_DE_CHAVE = ('429', 'RESOURCE_EXHAUSTED', 'quota', 'API_KEY_INVALID',
                   'API key not valid', 'PERMISSION_DENIED')
 
+_log = logging.getLogger(__name__)
+
+# Chamado a cada troca, com a mensagem pronta. Quem estiver rodando um
+# trabalho longo aponta para o proprio log -- e como o indexador mostra a
+# troca na mesma lista onde ja mostra os erros de lote.
+ao_girar = None
+
 _lock = threading.Lock()
 _indice = 0
+_giros = 0
 _cliente = None
 _chave_em_uso = None
 
@@ -77,19 +86,39 @@ def vale_trocar(e):
     return any(marca in s for marca in TROCA_DE_CHAVE)
 
 
+def em_uso():
+    """Qual chave esta valendo agora. So para diagnostico -- da o final da
+    chave, que identifica sem expor o segredo."""
+    disponiveis = chaves()
+    if not disponiveis:
+        return {'total': 0, 'atual': 0, 'final': None, 'giros': _giros}
+    i = _indice % len(disponiveis)
+    return {'total': len(disponiveis), 'atual': i + 1,
+            'final': disponiveis[i][-4:], 'giros': _giros}
+
+
 def girar():
     """Passa a usar a proxima chave. False quando so existe uma.
 
     O giro e circular: a chave esgotada hoje volta a valer amanha, e quem
     chama limita quantas voltas da (ver `girar_no_erro`).
     """
-    global _indice, _cliente
+    global _indice, _giros, _cliente
     with _lock:
-        if len(chaves()) < 2:
+        disponiveis = chaves()
+        if len(disponiveis) < 2:
             return False
+        antiga = _indice % len(disponiveis) + 1
         _indice += 1
+        _giros += 1
         _cliente = None
-        return True
+        msg = (f'chave {antiga} sem cota; seguindo na chave '
+               f'{_indice % len(disponiveis) + 1} de {len(disponiveis)}')
+    # Fora do lock: o gancho e de quem chama e pode pegar outro lock.
+    _log.warning(msg)
+    if ao_girar:
+        ao_girar(msg)
+    return True
 
 
 def girar_no_erro(e, giros_ja_dados):
