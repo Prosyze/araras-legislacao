@@ -1,0 +1,24 @@
+# Sem repositorio conectado, o deploy e um upload deste diretorio -- e aqui
+# convivem 6,9 GB de PDFs e ~170 MB de bancos que nao tem por que ir para o
+# container. Espelha o .gitignore no que pesa; a semente fica, que e de onde
+# o volume e populado na primeira subida.
+diarios_oficiais/
+db/araras_legislacao.db
+db/backup_*.db
+db/*.db-wal
+db/*.db-shm
+db/build_log.txt
+
+.env
+.env.local
+
+__pycache__/
+*.pyc
+server.log
+scripts/indexacao_local.log
+*.part
+scratch_*
+_*.txt
+_*.json
+diario-oficial-*.json
+.git/
