@@ -51,6 +51,7 @@ Variáveis de ambiente:
 | Variável | Obrigatória | Descrição |
 |---|---|---|
 | `GEMINI_API_KEY` | sim (para resumos) | Chave do Google AI Studio |
+| `GEMINI_API_KEY_FALLBACK_1`, `_2`, ... | não | Chaves de reserva. Quota estourada (429) troca de chave em vez de esperar |
 | `DATA_DIR` | recomendada | Caminho do volume persistente (ex.: `/data`) |
 | `GEMINI_MODEL` | não | Padrão: `gemini-2.5-flash` |
 

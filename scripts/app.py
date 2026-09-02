@@ -1,4 +1,3 @@
-import os
 import re
 import sqlite3
 import time
@@ -6,6 +5,7 @@ import time
 from dotenv import load_dotenv
 from flask import Flask, g, jsonify, render_template, request
 
+import chaves_gemini
 import config
 import manutencao
 import routes_ia
@@ -42,18 +42,11 @@ def _indexar_apos_atualizacao(novos_atos):
 
 updater.ao_concluir = _indexar_apos_atualizacao
 
-_genai_client = None
-
-
 def gemini():
-    global _genai_client
-    if _genai_client is None:
-        from google import genai
-        key = os.environ.get('GEMINI_API_KEY')
-        if not key:
-            raise RuntimeError('GEMINI_API_KEY nao configurada no .env')
-        _genai_client = genai.Client(api_key=key)
-    return _genai_client
+    cliente = chaves_gemini.cliente()
+    if cliente is None:
+        raise RuntimeError('GEMINI_API_KEY nao configurada no .env')
+    return cliente
 
 
 def get_db():
@@ -290,19 +283,29 @@ def _mensagem_amigavel(e):
 
 
 def _gerar_com_retry(prompt):
-    """Tenta o modelo principal com backoff e, se persistir, o de reserva."""
+    """Tenta o modelo principal com backoff e, se persistir, o de reserva.
+
+    Quota estourada e caso a parte: nao adianta esperar, entao troca a chave
+    e repete na hora, sem gastar tentativa.
+    """
     ultimo = None
+    giros = 0
     for modelo in (GEMINI_MODEL, *MODELOS_RESERVA):
-        for tentativa in range(3):
+        tentativa = 0
+        while tentativa < 3:
             try:
                 resp = gemini().models.generate_content(
                     model=modelo, contents=prompt)
                 return (resp.text or '').strip()
             except Exception as e:
                 ultimo = e
+                if chaves_gemini.girar_no_erro(e, giros):
+                    giros += 1
+                    continue
                 if not _transitorio(e):
                     raise
                 time.sleep(1.5 * (2 ** tentativa))  # 1.5s, 3s, 6s
+                tentativa += 1
     raise ultimo
 
 

@@ -4,6 +4,11 @@ Os vetores são guardados como BLOB float16 já normalizado (L2). float16
 custa metade do espaço e, para similaridade de cosseno, a perda é da ordem
 do terceiro decimal — irrelevante diante do ruído do próprio ranking. Com
 o vetor normalizado, o cosseno vira um produto escalar.
+
+Dois backends, escolhidos por `settings.EMBED_BACKEND`:
+  gemini — API do Google, usado em produção (free tier: 100 req/min).
+  local  — sentence-transformers rodando na própria CPU, sem rede nem
+           quota; pensado para a carga inicial de um acervo grande.
 """
 import os
 import re
@@ -12,28 +17,47 @@ import time
 
 import numpy as np
 
+import chaves_gemini
+
 from . import settings
 
-_client = None
-_client_lock = threading.Lock()
+_modelo_local = None
+_modelo_local_lock = threading.Lock()
 
 
 class EmbeddingIndisponivel(RuntimeError):
-    """Falta chave ou o serviço recusou de forma definitiva."""
+    """Falta chave/modelo ou o serviço recusou de forma definitiva."""
 
 
 def cliente():
-    global _client
-    with _client_lock:
-        if _client is None:
-            from google import genai
-            chave = os.environ.get('GEMINI_API_KEY', '').strip()
-            if not chave:
-                raise EmbeddingIndisponivel(
-                    'GEMINI_API_KEY não configurada — a indexação e a busca '
-                    'semântica ficam indisponíveis.')
-            _client = genai.Client(api_key=chave)
-    return _client
+    cli = chaves_gemini.cliente()
+    if cli is None:
+        raise EmbeddingIndisponivel(
+            'GEMINI_API_KEY não configurada — a indexação e a busca '
+            'semântica ficam indisponíveis.')
+    return cli
+
+
+# ----------------------------------------------------------------- local
+def _modelo():
+    global _modelo_local
+    with _modelo_local_lock:
+        if _modelo_local is None:
+            import torch
+            from sentence_transformers import SentenceTransformer
+            torch.set_num_threads(os.cpu_count() or 4)
+            _modelo_local = SentenceTransformer(settings.EMBED_MODEL)
+    return _modelo_local
+
+
+def _embed_local(textos, prefixo):
+    """multilingual-e5 é assimétrico por convenção de prefixo, não de
+    task_type como o Gemini: 'passage: ' para o que entra no índice e
+    'query: ' para a pergunta."""
+    vetores = _modelo().encode(
+        [f'{prefixo}{t}' for t in textos], batch_size=settings.EMBED_BATCH,
+        normalize_embeddings=True, show_progress_bar=False)
+    return [np.asarray(v, dtype=np.float32) for v in vetores]
 
 
 # ----------------------------------------------------------------- serialização
@@ -80,6 +104,13 @@ class _Limitador:
             self.bloqueado_ate = max(self.bloqueado_ate, time.time() + segundos)
             self.marcas.clear()
 
+    def reiniciar(self):
+        """Zera a janela. A quota por minuto e contada por chave, entao ao
+        trocar de chave a conta antiga nao vale mais."""
+        with self.lock:
+            self.marcas.clear()
+            self.bloqueado_ate = 0.0
+
 
 _limitador = _Limitador(settings.EMBED_RPM)
 
@@ -109,7 +140,9 @@ def _embed(textos, task_type, tentativas=5):
         task_type=task_type, output_dimensionality=settings.EMBED_DIM)
 
     ultimo = None
-    for tentativa in range(tentativas):
+    giros = 0
+    tentativa = 0
+    while tentativa < tentativas:
         _limitador.aguardar(len(textos))
         try:
             resp = cliente().models.embed_content(
@@ -118,11 +151,18 @@ def _embed(textos, task_type, tentativas=5):
                     for e in resp.embeddings]
         except Exception as e:  # noqa: BLE001 — a origem do erro é o serviço
             ultimo = e
+            # Quota é da chave: com outra, o lote segue na hora. Nem espera
+            # nem gasta tentativa, e a janela do limitador recomeça.
+            if chaves_gemini.girar_no_erro(e, giros):
+                giros += 1
+                _limitador.reiniciar()
+                continue
             if not _transitorio(e):
                 raise
             espera = _espera_sugerida(e, tentativa)
             _limitador.penalizar(espera)
             time.sleep(espera)
+            tentativa += 1
     raise ultimo
 
 
@@ -130,12 +170,16 @@ def embed_documentos(textos):
     """Vetores para indexação. Devolve lista de np.float32 normalizados."""
     if not textos:
         return []
+    if settings.EMBED_BACKEND == 'local':
+        return _embed_local(textos, 'passage: ')
     return [_normalizar(v) for v in _embed(textos, 'RETRIEVAL_DOCUMENT')]
 
 
 def embed_consulta(texto):
-    """Vetor da pergunta. `RETRIEVAL_QUERY` é assimétrico em relação ao
-    `RETRIEVAL_DOCUMENT` e melhora sensivelmente o casamento pergunta/norma."""
+    """Vetor da pergunta. Assimétrico em relação ao vetor de documento
+    (task_type no Gemini, prefixo no e5) — melhora o casamento pergunta/norma."""
+    if settings.EMBED_BACKEND == 'local':
+        return _embed_local([texto], 'query: ')[0]
     return _normalizar(_embed([texto], 'RETRIEVAL_QUERY')[0])
 
 
@@ -146,4 +190,6 @@ def _normalizar(v):
 
 
 def disponivel():
-    return bool(os.environ.get('GEMINI_API_KEY', '').strip())
+    if settings.EMBED_BACKEND == 'local':
+        return True
+    return chaves_gemini.configurada()

@@ -1,17 +1,16 @@
 """Chamada ao modelo generativo.
 
-Mesma estratégia já usada no resumo de atos: sobrecarga do Gemini (503/429)
-é pico de demanda, não erro do pedido, então vale repetir com backoff e cair
-para um modelo reserva antes de desistir.
+Mesma estratégia já usada no resumo de atos: sobrecarga do Gemini (503) é
+pico de demanda, não erro do pedido, então vale repetir com backoff e cair
+para um modelo reserva antes de desistir. Quota estourada (429) é limite da
+credencial, não do serviço, e sai antes por outro caminho: `chaves_gemini`
+troca a chave e o pedido segue sem espera.
 """
-import os
-import threading
 import time
 
-from . import settings
+import chaves_gemini
 
-_client = None
-_lock = threading.Lock()
+from . import settings
 
 TRANSITORIO = ('503', 'UNAVAILABLE', '429', 'RESOURCE_EXHAUSTED', 'overloaded',
                'high demand', '500', 'INTERNAL', 'DEADLINE_EXCEEDED')
@@ -22,19 +21,14 @@ class LLMIndisponivel(RuntimeError):
 
 
 def disponivel():
-    return bool(os.environ.get('GEMINI_API_KEY', '').strip())
+    return chaves_gemini.configurada()
 
 
 def cliente():
-    global _client
-    with _lock:
-        if _client is None:
-            from google import genai
-            chave = os.environ.get('GEMINI_API_KEY', '').strip()
-            if not chave:
-                raise LLMIndisponivel('GEMINI_API_KEY não configurada.')
-            _client = genai.Client(api_key=chave)
-    return _client
+    cli = chaves_gemini.cliente()
+    if cli is None:
+        raise LLMIndisponivel('GEMINI_API_KEY não configurada.')
+    return cli
 
 
 def transitorio(e):
@@ -61,15 +55,23 @@ def gerar(prompt, temperatura=None, modelos=None, tentativas=3):
     candidatos = modelos or (settings.CHAT_MODEL, *settings.CHAT_MODELOS_RESERVA)
 
     ultimo = None
+    giros = 0
     for modelo in dict.fromkeys(candidatos):
-        for tentativa in range(tentativas):
+        tentativa = 0
+        while tentativa < tentativas:
             try:
                 resp = cliente().models.generate_content(
                     model=modelo, contents=prompt, config=cfg)
                 return (resp.text or '').strip()
             except Exception as e:  # noqa: BLE001
                 ultimo = e
+                # Quota e limite da chave: outra chave resolve na hora, e a
+                # tentativa continua valendo para uma falha de verdade.
+                if chaves_gemini.girar_no_erro(e, giros):
+                    giros += 1
+                    continue
                 if not transitorio(e):
                     raise
                 time.sleep(1.5 * (2 ** tentativa))
+                tentativa += 1
     raise ultimo
