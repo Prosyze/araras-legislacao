@@ -5,6 +5,7 @@
 diarios_oficiais/
 db/araras_legislacao.db
 db/backup_*.db
+db/producao_download.db
 db/*.db-wal
 db/*.db-shm
 db/build_log.txt
@@ -15,7 +16,7 @@ db/build_log.txt
 __pycache__/
 *.pyc
 server.log
-scripts/indexacao_local.log
+scripts/indexacao_local*.log
 *.part
 scratch_*
 _*.txt
