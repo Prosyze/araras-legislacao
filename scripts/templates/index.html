@@ -290,6 +290,112 @@
   }
 
 
+  /* ---------- Prateleira de códigos ---------- */
+  .shelf { margin-top: 22px; }
+  .shelf-head { display: flex; align-items: baseline; gap: 10px; margin: 0 2px 12px; }
+  .shelf-head h2 {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 1.06rem; font-weight: 600; margin: 0;
+  }
+  .shelf-head p { margin: 0; color: var(--muted); font-size: .84rem; }
+  .shelf-head .chip { margin-left: auto; }
+  .shelf-lista {
+    background: var(--panel); border: 1px solid var(--border);
+    border-radius: var(--radius); box-shadow: var(--shadow); overflow: hidden;
+  }
+  .code {
+    display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap;
+    padding: 13px 17px; border-top: 1px solid var(--border); cursor: pointer;
+  }
+  .code:first-child { border-top: none; }
+  .code:hover { background: #f7f9fb; }
+  .code-nome {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-size: 1rem; font-weight: 600; line-height: 1.3;
+  }
+  .code:hover .code-nome { color: var(--accent); }
+  .code-ref {
+    font-size: .82rem; color: var(--ink-soft); font-variant-numeric: tabular-nums;
+  }
+  .code-nums {
+    margin-left: auto; display: flex; align-items: baseline; gap: 14px;
+    font-size: .78rem; color: var(--muted); font-variant-numeric: tabular-nums;
+  }
+  .code-nums b { color: var(--ink-soft); font-weight: 600; }
+  .code-desc {
+    flex-basis: 100%; margin: 0; font-size: .845rem; line-height: 1.5;
+    color: var(--ink-soft);
+  }
+  .code.fora { background: #fbfcfd; }
+  .code.fora .code-nome { color: var(--ink-soft); }
+  .code-alt {
+    font: inherit; font-size: .78rem; color: var(--accent);
+    background: none; border: none; padding: 0; cursor: pointer;
+    text-decoration: underline; text-underline-offset: 3px; white-space: nowrap;
+  }
+  .code-alt:hover { color: var(--brand); }
+  .code-aviso {
+    flex-basis: 100%; font-size: .78rem; line-height: 1.5; color: #7a5a12;
+    background: #fdf6ec; border: 1px solid #f0dda8;
+    border-radius: 8px; padding: 7px 10px;
+  }
+
+  /* ---------- Sumário e localizador do documento ---------- */
+  .doc.wide { max-width: 1120px; }
+  .docfind {
+    display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+    margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--border);
+  }
+  .docfind input {
+    font: inherit; font-size: .85rem; padding: 7px 10px;
+    border: 1px solid var(--border-strong); border-radius: 7px; background: #fcfcfd;
+  }
+  .docfind input.art { width: 92px; }
+  .docfind input.txt { width: 210px; }
+  .docfind .nav-hits {
+    display: flex; align-items: center; gap: 4px;
+    font-size: .78rem; color: var(--muted); font-variant-numeric: tabular-nums;
+  }
+  .docfind .nav-hits button {
+    font: inherit; background: #fff; border: 1px solid var(--border-strong);
+    border-radius: 6px; cursor: pointer; padding: 3px 8px; color: var(--ink-soft);
+  }
+  .docfind .nav-hits button:disabled { opacity: .45; cursor: default; }
+
+  .doc-split { display: grid; grid-template-columns: 268px 1fr; gap: 24px; }
+  .doc-nav {
+    position: sticky; top: 132px; align-self: start;
+    max-height: calc(100vh - 190px); overflow-y: auto;
+    border-right: 1px solid var(--border); padding: 20px 14px 20px 0;
+    font-size: .84rem;
+  }
+  .doc-nav .nav-tit {
+    font-size: .7rem; font-weight: 700; letter-spacing: .07em;
+    text-transform: uppercase; color: var(--muted); margin-bottom: 9px;
+  }
+  .doc-nav a {
+    display: block; text-decoration: none; color: var(--ink-soft);
+    padding: 5px 8px; border-radius: 6px; line-height: 1.4;
+    border-left: 2px solid transparent;
+  }
+  .doc-nav a:hover { background: #f1f4f8; color: var(--ink); }
+  .doc-nav a.n1 { font-weight: 600; color: var(--ink); margin-top: 9px; }
+  .doc-nav a.n2 { padding-left: 14px; }
+  .doc-nav a.n3 { padding-left: 24px; font-size: .81rem; }
+  .doc-nav a .faixa {
+    display: block; font-size: .72rem; color: var(--muted);
+    font-variant-numeric: tabular-nums; font-weight: 400;
+  }
+  .doc-nav a.atual { background: #eaf2fa; border-left-color: var(--accent); color: var(--brand); }
+  .doc-nav .vazio { color: var(--muted); font-size: .82rem; }
+
+  .legal .artnum { cursor: pointer; }
+  .legal .artnum:hover { color: var(--accent); text-decoration: underline; }
+  .legal mark.hit { background: #ffe08a; border-radius: 3px; }
+  .legal mark.hit.atual { background: #ffb347; box-shadow: 0 0 0 3px #ffb347; }
+  .alt-lista { margin-top: 10px; }
+  .alt-lista .card { margin-bottom: 8px; }
+
   /* ---------- Alternador de modo ---------- */
   .modes {
     display: flex; align-items: center; gap: 5px;
@@ -453,6 +559,15 @@
     .legal .b-ementa { margin-left: 0; }
     .doc-head, .doc-body { padding-left: 17px; padding-right: 17px; }
 
+    /* No celular o sumário vira uma faixa rolável no topo do documento. */
+    .doc-split { display: block; }
+    .doc-nav {
+      position: static; max-height: 220px; padding: 14px 0 12px;
+      border-right: none; border-bottom: 1px solid var(--border); margin-bottom: 4px;
+    }
+    .docfind input.txt, .docfind input.art { flex: 1; width: auto; min-width: 110px; }
+    .shelf-head { flex-wrap: wrap; }
+
     .modes { flex-wrap: wrap; }
     .mode { flex: 1; justify-content: center; padding: 9px 6px; font-size: .84rem; }
     .modes-note { display: none; }
@@ -519,10 +634,20 @@
         <option value="antigos">Mais antigos primeiro</option>
       </select>
       <div class="spacer"></div>
+      <button class="chip" id="btnPrincipais" title="Códigos e normas estruturantes do Município">★ Principais buscas</button>
       <button class="chip" id="btnLimpar">Limpar filtros</button>
       <button class="chip" id="btnPainel" title="Atualizar a base com novas edições do Diário Oficial">⭮ Atualizar base</button>
     </div>
   </div>
+
+  <section class="shelf" id="shelf" hidden>
+    <div class="shelf-head">
+      <h2>Principais buscas</h2>
+      <p>códigos e normas estruturantes do Município</p>
+      <button class="chip" id="shelfToggle">fechar</button>
+    </div>
+    <div class="shelf-lista" id="shelfLista"></div>
+  </section>
 
   <div class="upd" id="upd" hidden>
     <div class="upd-top">
@@ -599,7 +724,7 @@
 <script>
 const $ = id => document.getElementById(id);
 const els = { q: $('q'), tipo: $('tipo'), numero: $('numero'), ano: $('ano'), ordem: $('ordem') };
-let currentPage = 1, currentAto = null;
+let currentPage = 1, currentPages = 1, currentAto = null;
 
 const esc = s => (s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const cls = t => t.replace(/ /g, '_');
@@ -636,6 +761,7 @@ function params(page) {
 
 async function search(page = 1) {
   currentPage = page;
+  if (!$('shelf').hidden) fecharPrincipais();  // buscar sai da lista fixa
   $('resbar').innerHTML = '<span class="spinner"></span> buscando…';
   $('results').innerHTML = '';
   $('pager').style.display = 'none';
@@ -657,15 +783,20 @@ async function search(page = 1) {
     ` · ${els.ordem.value === 'antigos' ? 'dos mais antigos' : 'dos mais recentes'}`;
 
   $('results').innerHTML = d.results.map(cardHtml).join('');
-  document.querySelectorAll('.card').forEach(c =>
-    c.addEventListener('click', () => openDoc(c.dataset.id)));
+  ligarCards();
 
+  currentPages = d.pages;
   if (d.pages > 1) {
     $('pager').style.display = 'flex';
     $('pageInfo').textContent = `página ${d.page} de ${d.pages}`;
     $('prevPage').disabled = d.page <= 1;
     $('nextPage').disabled = d.page >= d.pages;
   }
+}
+
+function ligarCards() {
+  document.querySelectorAll('#results .card').forEach(c =>
+    c.addEventListener('click', () => openDoc(c.dataset.id)));
 }
 
 function cardHtml(r) {
@@ -681,11 +812,111 @@ function cardHtml(r) {
   </div>`;
 }
 
+/* ---------- principais buscas ---------- */
+/* Fica fora do caminho: a lista so e montada quando alguem pede, e enquanto
+   ela esta aberta os resultados da busca saem da tela para nao competir. */
+let codigosCarregados = false;
+
+async function abrirPrincipais() {
+  $('shelf').hidden = false;
+  $('btnPrincipais').classList.add('on');
+  document.querySelectorAll('#resbar, #results, #pager')
+    .forEach(el => el.style.display = 'none');
+  if (codigosCarregados) return;
+  $('shelfLista').innerHTML = '<div class="code">carregando…</div>';
+  try {
+    const d = await (await fetch('/api/codigos')).json();
+    $('shelfLista').innerHTML = (d.codigos || []).map(codeItemHtml).join('');
+    codigosCarregados = true;
+  } catch (e) {
+    $('shelfLista').innerHTML = '<div class="code">Não foi possível carregar a lista.</div>';
+  }
+}
+
+function fecharPrincipais() {
+  $('shelf').hidden = true;
+  $('btnPrincipais').classList.remove('on');
+  $('resbar').style.display = '';
+  $('results').style.display = '';
+  $('pager').style.display = currentPages > 1 ? 'flex' : 'none';
+}
+
+function codeItemHtml(c) {
+  const ref = `${c.tipo === 'LEI COMPLEMENTAR' ? 'Lei Complementar' : 'Lei'} nº ${esc(c.numero)}` +
+    (c.data_ato ? ` · ${br(c.data_ato)}` : c.ano_origem ? ` · ${c.ano_origem}` : '');
+  const alt = c.alteracoes
+    ? `<button class="code-alt" data-alt="${c.slug}">${c.alteracoes} ${c.alteracoes === 1 ? 'norma posterior' : 'normas posteriores'}</button>`
+    : '';
+
+  return `<div class="code ${c.na_base ? '' : 'fora'}" ${c.na_base ? `data-abrir="${c.ato_id}"` : ''}>
+    <span class="code-nome">${esc(c.nome)}</span>
+    <span class="code-ref">${ref}</span>
+    <span class="code-nums">
+      ${c.na_base ? `<span><b>${nf(c.artigos)}</b> artigos</span>` : ''}
+      ${alt}
+    </span>
+    <p class="code-desc">${esc(c.descricao)}</p>
+    ${c.na_base ? '' : `<div class="code-aviso">Texto original de ${c.ano_origem},
+      anterior ao acervo do Diário Eletrônico (2014). Constam aqui apenas as
+      alterações e regulamentos publicados desde então.</div>`}
+  </div>`;
+}
+
+$('shelfLista').addEventListener('click', e => {
+  const alt = e.target.closest('[data-alt]');
+  if (alt) return verAlteracoes(alt.dataset.alt);
+  const abrir = e.target.closest('[data-abrir]');
+  if (abrir) openDoc(abrir.dataset.abrir);
+});
+$('btnPrincipais').addEventListener('click', () =>
+  $('shelf').hidden ? abrirPrincipais() : fecharPrincipais());
+$('shelfToggle').addEventListener('click', fecharPrincipais);
+
+async function verAlteracoes(slug) {
+  currentPages = 1;
+  fecharPrincipais();
+  $('resbar').innerHTML = '<span class="spinner"></span> reunindo…';
+  $('results').innerHTML = '';
+  $('pager').style.display = 'none';
+  const d = await (await fetch(`/api/codigos/${slug}/alteracoes`)).json();
+  const lista = d.alteracoes || [];
+  $('resbar').innerHTML = `<b>${nf(lista.length)}</b> ${lista.length === 1 ? 'norma posterior cita' : 'normas posteriores citam'} ` +
+    `“${esc(d.nome)}” · alterações e regulamentos`;
+  $('results').innerHTML = lista.map(cardHtml).join('') ||
+    '<div class="empty">Nada publicado depois dela até agora.</div>';
+  ligarCards();
+  $('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
 /* ---------- document view ---------- */
-function renderLegal(blocos) {
+/* Realce sem acento: a chave e montada caractere a caractere para que cada
+   posicao continue valendo no texto original -- normalizar a string inteira
+   deslocaria os indices e o <mark> cairia no lugar errado. */
+function chave(s) {
+  let out = '';
+  for (let i = 0; i < s.length; i++) {
+    const n = s[i].normalize('NFD');
+    out += (n[0] || s[i]).toLowerCase();
+  }
+  return out;
+}
+
+function realcar(txt, termo) {
+  if (!termo) return esc(txt);
+  const alvo = chave(termo), base = chave(txt);
+  let html = '', pos = 0, i;
+  while ((i = base.indexOf(alvo, pos)) !== -1) {
+    html += esc(txt.slice(pos, i)) +
+      `<mark class="hit">${esc(txt.slice(i, i + alvo.length))}</mark>`;
+    pos = i + alvo.length;
+  }
+  return html + esc(txt.slice(pos));
+}
+
+function renderLegal(blocos, termo) {
   let html = '', signOpen = false;
-  for (const b of blocos) {
-    const t = b.tipo, txt = esc(b.texto);
+  blocos.forEach((b, i) => {
+    const t = b.tipo, txt = realcar(b.texto, termo);
     if ((t === 'assinatura' || t === 'registro') && !signOpen) {
       html += '<div class="sign-block">'; signOpen = true;
     } else if (signOpen && t !== 'assinatura' && t !== 'registro') {
@@ -694,14 +925,63 @@ function renderLegal(blocos) {
     if (t === 'artigo') {
       const m = b.texto.match(/^Art(?:igo)?\.?\s*(\d+)/i);
       const art = m ? String(parseInt(m[1], 10)) : '';
-      html += `<p class="b-artigo" data-art="${art}">${txt.replace(/^(Art(?:igo)?\.?\s*\d+[ºo°]?[)\.]?)/i,
-        '<span class="artnum">$1</span>')}</p>`;
+      html += `<p class="b-artigo" id="b${i}" data-art="${art}">${txt.replace(/^(Art(?:igo)?\.?\s*\d+[ºo°]?[)\.]?)/i,
+        '<span class="artnum" title="Copiar link deste artigo">$1</span>')}</p>`;
     } else {
-      html += `<p class="b-${t}">${txt}</p>`;
+      html += `<p class="b-${t}" id="b${i}">${txt}</p>`;
     }
-  }
+  });
   if (signOpen) html += '</div>';
   return html;
+}
+
+/* Sumário: títulos, capítulos e seções na ordem do texto, cada um com a faixa
+   de artigos que cobre -- é por ela que se acha um artigo sem rolar o texto. */
+const NIVEL = [
+  [/^(LIVRO|PARTE|T[ÍI]TULO)\b/i, 1],
+  [/^(CAP[ÍI]TULO|ANEXO|DISPOSI[ÇC][ÕO]ES)\b/i, 2],
+  [/^(SUBSE[ÇC][ÃA]O)\b/i, 4],
+  [/^(SE[ÇC][ÃA]O)\b/i, 3],
+];
+
+function montarSumario(blocos) {
+  const itens = [];
+  blocos.forEach((b, i) => {
+    if (b.tipo !== 'heading') return;
+    const nivel = (NIVEL.find(([re]) => re.test(b.texto)) || [null, 2])[1];
+    itens.push({ i, nivel, texto: b.texto.replace(/\s+/g, ' ').trim() });
+  });
+  if (!itens.length) return itens;
+
+  // Um código sem TÍTULO começa no capítulo: sobe todo mundo para que o
+  // primeiro nível existente seja sempre o nível 1 da lista.
+  const menor = Math.min(...itens.map(t => t.nivel));
+  itens.forEach(t => t.nivel = Math.min(3, t.nivel - menor + 1));
+
+  const artigoDe = i => {
+    const m = (blocos[i].texto || '').match(/^Art(?:igo)?\.?\s*(\d+)/i);
+    return blocos[i].tipo === 'artigo' && m ? parseInt(m[1], 10) : null;
+  };
+  // A faixa de um título vai até o próximo título, não até o capítulo
+  // seguinte: senão a divisão que só abre seções ficaria sem intervalo algum.
+  itens.forEach((t, k) => {
+    const prox = itens.findIndex((o, j) => j > k && o.nivel <= t.nivel);
+    const fim = prox === -1 ? blocos.length : itens[prox].i;
+    const arts = [];
+    for (let j = t.i + 1; j < fim; j++) {
+      const n = artigoDe(j);
+      if (n !== null) arts.push(n);
+    }
+    if (arts.length) t.faixa = arts[0] === arts[arts.length - 1]
+      ? `art. ${arts[0]}` : `art. ${arts[0]}–${arts[arts.length - 1]}`;
+  });
+  return itens;
+}
+
+function navHtml(itens) {
+  return `<div class="nav-tit">Sumário</div>` + itens.map(t =>
+    `<a href="#" class="n${t.nivel}" data-b="${t.i}">${esc(t.texto)}
+       ${t.faixa ? `<span class="faixa">${t.faixa}</span>` : ''}</a>`).join('');
 }
 
 function renderSummary(raw) {
@@ -722,9 +1002,34 @@ function renderSummary(raw) {
   return html;
 }
 
+let sumario = [], hits = [], hitAtual = -1;
+
 async function openDoc(id, alvoArt) {
   const a = await (await fetch(`/api/ato/${id}`)).json();
   currentAto = a;
+  sumario = montarSumario(a.blocos);
+  hits = []; hitAtual = -1;
+
+  const arts = a.blocos.filter(b => b.tipo === 'artigo').length;
+  const comNav = sumario.length >= 3;
+  const localizador = arts >= 6 ? `
+      <div class="docfind">
+        <input class="art" id="findArt" type="text" inputmode="numeric"
+               placeholder="art. nº" aria-label="Ir a um artigo">
+        <input class="txt" id="findTxt" type="search"
+               placeholder="localizar no texto" aria-label="Localizar no texto">
+        <span class="nav-hits" id="findNav" hidden>
+          <button id="findPrev" title="Anterior">‹</button>
+          <span id="findCont"></span>
+          <button id="findNext" title="Próxima">›</button>
+        </span>
+      </div>` : '';
+
+  const corpo = `
+      <div id="sumSlot"></div>
+      <div class="legal">${renderLegal(a.blocos)}</div>`;
+
+  $('doc').className = 'doc' + (comNav ? ' wide' : '');
   $('doc').innerHTML = `
     <div class="doc-head">
       <div class="row1">
@@ -735,32 +1040,119 @@ async function openDoc(id, alvoArt) {
       <h2>${esc(a.titulo)}</h2>
       <div class="doc-meta">
         ${br(a.data_ato)} · Diário Oficial edição ${a.edicao} de ${br(a.data_diario)} ·
-        páginas ${a.pagina_inicio}–${a.pagina_fim}
+        páginas ${a.pagina_inicio}–${a.pagina_fim}${arts ? ` · ${nf(arts)} artigos` : ''}
       </div>
       <div class="doc-actions">
         <button class="btn sm" id="btnResumo">✦ Resumir com IA</button>
         <button class="btn ghost sm" id="btnCopiar">Copiar texto</button>
+        <button class="btn ghost sm" id="btnLink">Copiar link</button>
       </div>
+      ${localizador}
     </div>
     <div class="doc-body">
-      <div id="sumSlot"></div>
-      <div class="legal">${renderLegal(a.blocos)}</div>
+      ${comNav ? `<div class="doc-split">
+          <aside class="doc-nav" id="docNav">${navHtml(sumario)}</aside>
+          <div>${corpo}</div>
+        </div>` : corpo}
     </div>`;
 
   $('btnResumo').addEventListener('click', () => gerarResumo(a.id, false));
   $('btnCopiar').addEventListener('click', copiarTexto);
+  $('btnLink').addEventListener('click', () => copiarLink(a.id));
+  if (comNav) $('docNav').addEventListener('click', e => {
+    const alvo = e.target.closest('a[data-b]');
+    if (!alvo) return;
+    e.preventDefault();
+    irParaBloco($('b' + alvo.dataset.b));
+  });
+  if (localizador) ligarLocalizador();
+
   $('overlay').classList.add('open');
   document.body.style.overflow = 'hidden';
-  if (a.resumo) showSummary(a.resumo, true);
-
-  // Fonte citada pela IA: leva o leitor direto ao dispositivo.
-  if (alvoArt) {
-    const el = $('doc').querySelector(`.b-artigo[data-art="${CSS.escape(String(alvoArt))}"]`);
-    if (el) {
-      el.classList.add('destaque');
-      setTimeout(() => el.scrollIntoView({ block: 'center', behavior: 'smooth' }), 60);
-    }
+  if (comNav) {
+    // Só dá para medir depois de abrir. O cabeçalho é fixo e sua altura
+    // depende do título; o sumário para logo abaixo dele, medido, em vez de
+    // num palpite fixo no CSS.
+    const alto = $('doc').querySelector('.doc-head').offsetHeight + 14;
+    $('docNav').style.top = alto + 'px';
+    $('docNav').style.maxHeight = `calc(100vh - ${alto + 40}px)`;
   }
+  if (a.resumo) showSummary(a.resumo, true);
+  marcarHash(a.id, alvoArt);
+
+  // Fonte citada pela IA, link compartilhado ou "ir ao art." da prateleira:
+  // leva o leitor direto ao dispositivo.
+  if (alvoArt) irParaArtigo(alvoArt); else $('overlay').scrollTop = 0;
+}
+
+function irParaBloco(el) {
+  if (!el) return;
+  el.scrollIntoView({ block: 'center', behavior: 'smooth' });
+}
+
+function irParaArtigo(n) {
+  const el = $('doc').querySelector(`.b-artigo[data-art="${CSS.escape(String(n))}"]`);
+  if (!el) return false;
+  document.querySelectorAll('.legal .destaque').forEach(x => x.classList.remove('destaque'));
+  el.classList.add('destaque');
+  setTimeout(() => irParaBloco(el), 60);
+  return true;
+}
+
+/* ---------- localizar dentro do documento ---------- */
+function ligarLocalizador() {
+  $('findArt').addEventListener('keydown', e => {
+    if (e.key !== 'Enter') return;
+    const n = (e.target.value.match(/\d+/) || [])[0];
+    if (n && !irParaArtigo(n)) e.target.setAttribute('title', 'artigo não encontrado');
+  });
+
+  let t = null;
+  $('findTxt').addEventListener('input', e => {
+    clearTimeout(t);
+    t = setTimeout(() => localizar(e.target.value.trim()), 220);
+  });
+  $('findTxt').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); passarHit(e.shiftKey ? -1 : 1); }
+  });
+  $('findPrev').addEventListener('click', () => passarHit(-1));
+  $('findNext').addEventListener('click', () => passarHit(1));
+}
+
+function localizar(termo) {
+  const legal = $('doc').querySelector('.legal');
+  legal.innerHTML = renderLegal(currentAto.blocos, termo.length >= 2 ? termo : '');
+  hits = [...legal.querySelectorAll('mark.hit')];
+  hitAtual = -1;
+  $('findNav').hidden = termo.length < 2;
+  $('findCont').textContent = hits.length ? `0 de ${hits.length}` : 'nada encontrado';
+  $('findPrev').disabled = $('findNext').disabled = !hits.length;
+  if (hits.length) passarHit(1);
+}
+
+function passarHit(passo) {
+  if (!hits.length) return;
+  if (hitAtual >= 0) hits[hitAtual].classList.remove('atual');
+  hitAtual = (hitAtual + passo + hits.length) % hits.length;
+  hits[hitAtual].classList.add('atual');
+  $('findCont').textContent = `${hitAtual + 1} de ${hits.length}`;
+  irParaBloco(hits[hitAtual]);
+}
+
+// O #doc e reescrito a cada abertura, mas continua sendo o mesmo elemento:
+// o clique no número do artigo se liga aqui uma vez só.
+$('doc').addEventListener('click', e => {
+  if (!e.target.classList.contains('artnum') || !currentAto) return;
+  copiarLink(currentAto.id, e.target.closest('.b-artigo').dataset.art);
+});
+
+function copiarLink(id, art) {
+  const url = location.origin + location.pathname + '#ato/' + id + (art ? '/art/' + art : '');
+  navigator.clipboard.writeText(url).then(() => {
+    const b = $('btnLink'), antes = b.textContent;
+    b.textContent = art ? `Link do art. ${art} copiado ✓` : 'Link copiado ✓';
+    setTimeout(() => b.textContent = antes, 1800);
+  });
 }
 
 function showSummary(texto, cached) {
@@ -803,9 +1195,44 @@ function copiarTexto() {
 function closeDoc() {
   $('overlay').classList.remove('open');
   document.body.style.overflow = '';
+  if (location.hash.startsWith('#ato/')) marcarHash(null);
 }
 $('overlay').addEventListener('click', e => { if (e.target === $('overlay')) closeDoc(); });
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDoc(); });
+
+/* ---------- endereço do artigo ---------- */
+/* O documento vive num modal, entao o endereco e um hash. Vale para o link
+   copiado, para o botao Voltar e para quem chega de fora ja no artigo. */
+let hashInterno = false;
+
+function marcarHash(id, art) {
+  hashInterno = true;
+  const endereco = id ? `#ato/${id}${art ? '/art/' + art : ''}` : '';
+  history.replaceState(null, '', location.pathname + location.search + endereco);
+  setTimeout(() => hashInterno = false, 0);
+}
+
+function aplicarHash() {
+  if (hashInterno) return;
+  const m = location.hash.match(/^#ato\/(\d+)(?:\/art\/(\d+))?/);
+  if (m) openDoc(m[1], m[2]);
+  else if ($('overlay').classList.contains('open')) closeDoc();
+}
+window.addEventListener('hashchange', aplicarHash);
+
+// Sumário acompanha a leitura: destaca a divisão em que o texto está.
+$('overlay').addEventListener('scroll', () => {
+  const nav = $('docNav');
+  if (!nav || !sumario.length) return;
+  const limite = 180;
+  let atual = sumario[0];
+  for (const t of sumario) {
+    const el = $('b' + t.i);
+    if (el && el.getBoundingClientRect().top <= limite) atual = t; else break;
+  }
+  nav.querySelectorAll('a').forEach(a =>
+    a.classList.toggle('atual', +a.dataset.b === atual.i));
+});
 
 $('btnBuscar').addEventListener('click', () => search(1));
 els.q.addEventListener('keydown', e => { if (e.key === 'Enter') search(1); });
@@ -1178,7 +1605,7 @@ $('btnIdxStop').addEventListener('click', () =>
 
 iaStatus();
 
-loadStats(); loadAnos(); search(1);
+loadStats(); loadAnos(); search(1); aplicarHash();
 pollUpd().then(() => {  // se uma atualização já estiver rodando, mostra o painel
   fetch('/api/atualizar/status').then(r => r.json()).then(st => {
     if (st.running) { $('upd').hidden = false; updTimer = setInterval(pollUpd, 1200); }

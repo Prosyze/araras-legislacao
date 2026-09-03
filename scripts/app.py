@@ -6,6 +6,7 @@ from dotenv import load_dotenv
 from flask import Flask, g, jsonify, render_template, request
 
 import chaves_gemini
+import codigos
 import config
 import manutencao
 import routes_ia
@@ -129,6 +130,23 @@ def facetas():
         "SELECT DISTINCT substr(data_ato,1,4) a FROM atos WHERE a IS NOT NULL ORDER BY a DESC"
     )]
     return jsonify({'anos': anos})
+
+
+@app.route('/api/codigos')
+def catalogo_codigos():
+    """Prateleira das normas estruturantes, na ordem do catalogo."""
+    return jsonify({'codigos': codigos.listar(get_db())})
+
+
+@app.route('/api/codigos/<slug>/alteracoes')
+def codigo_alteracoes(slug):
+    entrada = codigos.por_slug(slug)
+    if entrada is None:
+        return jsonify({'error': 'norma nao catalogada'}), 404
+    achados = codigos.alteracoes(get_db(), entrada)
+    for a in achados:
+        a['trecho'] = clean_snippet(a['trecho'])
+    return jsonify({'slug': slug, 'nome': entrada['nome'], 'alteracoes': achados})
 
 
 @app.route('/api/search')
