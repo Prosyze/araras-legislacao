@@ -21,10 +21,10 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from dotenv import load_dotenv  # noqa: E402
 
+load_dotenv()  # antes de config/rag.settings, que leem o ambiente no import
+
 import config  # noqa: E402
 from rag import indexer, schema, settings  # noqa: E402
-
-load_dotenv()
 
 
 def _conn(db_path):

@@ -7,6 +7,10 @@ import unicodedata
 from dotenv import load_dotenv
 from flask import Flask, g, jsonify, render_template, request
 
+# Antes dos modulos locais: config e rag.settings leem o ambiente ao serem
+# importados, entao o .env precisa estar carregado ate aqui.
+load_dotenv()
+
 import chaves_gemini
 import codigos
 import config
@@ -15,8 +19,6 @@ import routes_ia
 import updater
 from format_lib import plain_text, structure_text
 from rag import indexer as rag_indexer
-
-load_dotenv()
 
 DB_PATH = config.preparar_dados()
 # O banco do volume persiste entre deploys, entao correcoes nas regras de
