@@ -24,13 +24,25 @@ extraídos automaticamente do Diário Oficial Eletrônico, com resumo por IA.
 
 ## Rodando localmente
 
+O repositório já traz o banco pronto em `db/araras_legislacao.db` (acervo,
+índice de busca, chunks e vetores da IA), versionado com **Git LFS**.
+
 ```bash
+git lfs install                 # uma vez por máquina, antes do clone
+git clone git@github.com:Prosyze/araras-legislacao.git
+cd araras-legislacao
+python -m venv .venv
+.venv\Scripts\activate          # Linux/macOS: source .venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env        # coloque sua GEMINI_API_KEY
+cp .env.example .env            # coloque sua GEMINI_API_KEY
 python scripts/app.py
 ```
 
-Abra <http://127.0.0.1:5050>.
+Abra <http://127.0.0.1:5050>. Com várias threads no Windows:
+`cd scripts && waitress-serve --listen=127.0.0.1:5050 app:app`.
+
+Se `db/araras_legislacao.db` tiver ~130 bytes, o LFS não baixou o arquivo:
+rode `git lfs pull`.
 
 ## Deploy (Railway)
 

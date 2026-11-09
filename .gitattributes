@@ -1,0 +1,1 @@
+db/araras_legislacao.db filter=lfs diff=lfs merge=lfs -text

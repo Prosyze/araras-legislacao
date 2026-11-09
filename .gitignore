@@ -9,7 +9,7 @@ diarios_oficiais/
 # gerado por scripts/gerar_semente.py). O banco de trabalho carrega também os
 # chunks e vetores do RAG, que o servidor refaz sozinho e dobrariam o tamanho
 # do repositório a cada reindexação.
-db/araras_legislacao.db
+# db/araras_legislacao.db vai versionado via Git LFS (banco completo, com vetores)
 db/backup_*.db
 db/producao_download.db
 db/*.db-wal
@@ -32,3 +32,8 @@ _*.json
 # Lixo de execucao a partir de scripts/ (caminhos relativos errados)
 scripts/db/
 pdfs/
+
+# Ferramentas locais
+.claude/
+.pytest_cache/
+.venv/

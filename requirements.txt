@@ -1,9 +1,12 @@
 Flask==3.0.3
-gunicorn==23.0.0
 PyMuPDF==1.26.5
 google-genai==2.19.0
 python-dotenv==1.0.1
 numpy==1.26.4
 
-# Opcional, só para indexação local (RAG_EMBED_BACKEND=local — ver .env.example).
-# Produção não instala isso: pip install sentence-transformers torch --index-url https://download.pytorch.org/whl/cpu
+# Servidor de producao: gunicorn no Linux/Railway, waitress no Windows.
+gunicorn==23.0.0; sys_platform != "win32"
+waitress==3.0.2
+
+# Opcional, so para indexacao local (RAG_EMBED_BACKEND=local, ver .env.example).
+# Producao nao instala isso: pip install sentence-transformers torch --index-url https://download.pytorch.org/whl/cpu

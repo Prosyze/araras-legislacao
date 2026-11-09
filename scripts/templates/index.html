@@ -120,6 +120,7 @@
     border: 1px solid var(--border); border-radius: 999px; padding: 5px 11px;
     cursor: pointer;
   }
+  label.chip { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
   .chip:hover { background: #e3e8ef; }
   .chip.on { background: var(--brand); border-color: var(--brand); color: #fff; }
 
@@ -633,6 +634,7 @@
         <option value="recentes">Mais recentes primeiro</option>
         <option value="antigos">Mais antigos primeiro</option>
       </select>
+      <label class="chip" id="lblCreditos" title="Esconde decretos/leis de abertura de crédito adicional, suplementar, especial e suplementação"><input type="checkbox" id="ocultarCreditos"> Ocultar créditos adicionais</label>
       <div class="spacer"></div>
       <button class="chip" id="btnPrincipais" title="Códigos e normas estruturantes do Município">★ Principais buscas</button>
       <button class="chip" id="btnLimpar">Limpar filtros</button>
@@ -754,6 +756,7 @@ function params(page) {
   if (els.tipo.value) p.set('tipo', els.tipo.value);
   if (els.numero.value.trim()) p.set('numero', els.numero.value.trim());
   if (els.ano.value) p.set('ano', els.ano.value);
+  if ($('ocultarCreditos').checked) p.set('ocultar_creditos', '1');
   p.set('ordem', els.ordem.value);
   p.set('page', page);
   return p;
@@ -1236,10 +1239,11 @@ $('overlay').addEventListener('scroll', () => {
 
 $('btnBuscar').addEventListener('click', () => search(1));
 els.q.addEventListener('keydown', e => { if (e.key === 'Enter') search(1); });
-[els.tipo, els.ano, els.ordem].forEach(el => el.addEventListener('change', () => search(1)));
+[els.tipo, els.ano, els.ordem, $('ocultarCreditos')].forEach(el => el.addEventListener('change', () => search(1)));
 els.numero.addEventListener('keydown', e => { if (e.key === 'Enter') search(1); });
 $('btnLimpar').addEventListener('click', () => {
   els.q.value = els.numero.value = ''; els.tipo.value = els.ano.value = '';
+  $('ocultarCreditos').checked = false;
   els.ordem.value = 'recentes';
   search(1);
 });

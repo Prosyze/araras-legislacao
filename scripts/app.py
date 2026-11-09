@@ -1,6 +1,8 @@
 import re
+import os
 import sqlite3
 import time
+import unicodedata
 
 from dotenv import load_dotenv
 from flask import Flask, g, jsonify, render_template, request
@@ -20,8 +22,9 @@ DB_PATH = config.preparar_dados()
 # O banco do volume persiste entre deploys, entao correcoes nas regras de
 # extracao precisam ser reaplicadas aos dados ja gravados. Primeiro o texto
 # reextraido que veio na semente, depois a limpeza pelas regras atuais.
-manutencao.sincronizar_com_semente(DB_PATH, config.SEED_DB)
-manutencao.sanitizar(DB_PATH)
+if os.environ.get('LOCAL_PRESERVE_DB') != '1':
+    manutencao.sincronizar_com_semente(DB_PATH, config.SEED_DB)
+    manutencao.sanitizar(DB_PATH)
 GEMINI_MODEL = config.GEMINI_MODEL
 # Usados quando o principal esta sobrecarregado (503). Modelos com versao fixa
 # saem do ar com o tempo, entao a reserva final e um alias que acompanha a atual.
@@ -50,10 +53,28 @@ def gemini():
     return cliente
 
 
+_CREDITO_RE = re.compile(
+    r'CREDITOS?\s+(ADICIONA|SUPLEMENTAR|ESPECIA|EXTRAORDINARI)|SUPLEMENTACAO'
+    r'|ABRE\s+(AO\s+)?(O\s+)?CREDITO|ABRIR\s+CREDITO|ABERTURA\s+DE\s+CREDITO')
+_FIM_EMENTA_RE = re.compile(r'PREFEIT|CAMARA MUNICIPAL DE ARARAS APROVOU|FAZ SABER')
+
+
+def eh_credito_adicional(texto):
+    """True se a ementa (abertura do texto, antes do preambulo) trata de
+    credito adicional/suplementar/especial/extraordinario ou suplementacao."""
+    if not texto:
+        return 0
+    ementa = unicodedata.normalize('NFD', texto[:600].upper())
+    ementa = ementa.encode('ascii', 'ignore').decode()
+    ementa = _FIM_EMENTA_RE.split(re.sub(r'\s+', ' ', ementa))[0]
+    return 1 if _CREDITO_RE.search(ementa) else 0
+
+
 def get_db():
     if 'db' not in g:
         g.db = sqlite3.connect(DB_PATH, timeout=30)
         g.db.row_factory = sqlite3.Row
+        g.db.create_function('eh_credito', 1, eh_credito_adicional, deterministic=True)
         # WAL deixa a leitura da busca conviver com a escrita da atualizacao.
         g.db.execute('PRAGMA journal_mode=WAL')
     return g.db
@@ -156,6 +177,7 @@ def search():
     tipo = request.args.get('tipo', '').strip()
     numero = request.args.get('numero', '').strip()
     ano = request.args.get('ano', '').strip()
+    ocultar_creditos = request.args.get('ocultar_creditos') == '1'
     ordem = request.args.get('ordem', 'recentes').strip()
     page = max(1, int(request.args.get('page', 1)))
     page_size = 20
@@ -177,6 +199,9 @@ def search():
     if ano:
         where.append('substr(a.data_ato,1,4) = ?')
         params.append(ano)
+
+    if ocultar_creditos:
+        where.append('eh_credito(a.texto) = 0')
 
     fts = fts_query(q) if q else None
     # Quem digita "1.620" na caixa quer a Lei 1.620, e nao os atos cujo texto
